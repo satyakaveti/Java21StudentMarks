@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Java 21 Tutorial — Student Portal</title>
+<link rel="stylesheet" href="gh.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css"/>
+</head>
+<body>
+<header class="gh-header">
+  <div class="gh-logo"><svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>Student Portal</div>
+  <span class="gh-breadcrumb"><a href="../index.html">tutorials</a> / <a href="index.html">java21</a> / <span>java21</span></span>
+</header>
+<div class="layout">
+<nav class="sidebar">
+  <div class="sidebar-nav-header"><a href="index.html">← All Java Versions</a></div>
+  <div class="sidebar-section">Java 21 Topics</div>
+  <a class="sidebar-link" href="#virtual-threads">Virtual Threads ✓ Standard</a>
+  <a class="sidebar-link" href="#record-patterns">Record Patterns ✓ Standard</a>
+  <a class="sidebar-link" href="#pattern-switch">Pattern Matching Switch ✓ Standard</a>
+  <a class="sidebar-link" href="#sequenced">Sequenced Collections ✓ Standard</a>
+  <a class="sidebar-link" href="#unnamed-patterns">Unnamed Patterns &amp; Variables</a>
+  <a class="sidebar-link" href="#scoped-values-preview">Scoped Values (Preview)</a>
+  <a class="sidebar-link" href="#string-templates">String Templates (Preview)</a>
+  <a class="sidebar-link" href="#zgc">Generational ZGC ✓ Standard</a>
+  <div class="sidebar-section">Other Versions</div>
+  <div class="sidebar-versions">
+    <a class="ver-link" href="java8.html">Java 8 LTS</a>
+    <a class="ver-link" href="java9.html">Java 9</a>
+    <a class="ver-link" href="java10.html">Java 10</a>
+    <a class="ver-link" href="java11.html">Java 11 LTS</a>
+    <a class="ver-link" href="java12.html">Java 12</a>
+    <a class="ver-link" href="java13.html">Java 13</a>
+    <a class="ver-link" href="java14.html">Java 14</a>
+    <a class="ver-link" href="java15.html">Java 15</a>
+    <a class="ver-link" href="java16.html">Java 16</a>
+    <a class="ver-link" href="java17.html">Java 17 LTS</a>
+    <a class="ver-link" href="java18.html">Java 18</a>
+    <a class="ver-link" href="java19.html">Java 19</a>
+    <a class="ver-link" href="java20.html">Java 20</a>
+    <a class="ver-link current-ver" href="java21.html">Java 21 LTS ★</a>
+  </div>
+</nav>
+<main class="main">
+<div class="ver-header">
+  <div class="ver-meta">
+    <span class="badge badge-current">LTS ★ Target</span>
+    <span style="font-size:0.875rem;color:#57606a">Released September 2023</span>
+  </div>
+  <h1>Java 21 LTS — The Destination</h1>
+  <p>All Project Loom and Project Amber preview features graduate to standard. The most powerful LTS since Java 8. This is the version this project targets.</p>
+</div>
+
+<div class="topic" id="virtual-threads">
+  <div class="topic-title">Virtual Threads — Standard <span class="jep">JEP 444</span></div>
+  <div class="in-project-note">Used in this project — <code>spring.threads.virtual.enabled=true</code> enables virtual threads for all Tomcat request handling and <code>@Async</code> tasks.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>Virtual threads graduate from preview to standard in Java 21. They are now production-ready with no <code>--enable-preview</code> flag. The JVM scheduler (ForkJoinPool-based) multiplexes millions of virtual threads onto a small pool of carrier platform threads. Blocking I/O (JDBC, HTTP, file, Redis) parks the virtual thread without blocking the carrier. Spring Boot 3.2+ enables them with a single property.</p>
+  <div class="section-label"><span class="num">2</span> Examples</div>
+  <div class="examples">
+    <div class="example">
+      <div class="example-header"><span class="example-title">Create virtual threads</span><span class="ex-badge ex-simple">Simple</span></div>
+      <pre><code class="language-java">// Named virtual thread
+Thread vt = Thread.ofVirtual().name("db-worker").start(() -> {
+    var result = jdbcTemplate.queryForObject("SELECT ...", String.class);
+    System.out.println(result);
+});
+
+// Virtual thread executor — 1 million concurrent tasks
+try (var exec = Executors.newVirtualThreadPerTaskExecutor()) {
+    IntStream.range(0, 1_000_000)
+        .forEach(i -> exec.submit(() -> processStudent(i)));
+}</code></pre>
+    </div>
+    <div class="example">
+      <div class="example-header"><span class="example-title">Why virtual threads matter</span><span class="ex-badge ex-medium">Medium</span></div>
+      <pre><code class="language-java">// Platform threads: Tomcat has 200 by default
+// If each request takes 50ms on DB, max throughput = 200/0.05 = 4,000 req/sec
+// When 200 threads all wait on DB, new requests queue
+
+// Virtual threads: each request gets its own virtual thread
+// 10,000 concurrent requests → 10,000 virtual threads
+// Only ~8 carrier threads, all kept busy with non-blocking work
+// Max throughput ≈ 10,000/0.05 = 200,000 req/sec
+
+// The code is identical — no callbacks, no reactive, just blocking:
+@GetMapping("/results")
+public List&lt;MarkDTO&gt; getResults(@AuthenticationPrincipal UserPrincipal p) {
+    return markRepository.findByStudentId(p.getStudentId())  // blocks — fine!
+        .stream().map(this::toDTO).collect(Collectors.toList());
+}</code></pre>
+    </div>
+    <div class="example">
+      <div class="example-header"><span class="example-title">Virtual threads + Spring Boot</span><span class="ex-badge ex-realtime">Real-time</span></div>
+      <pre><code class="language-java">// Before (Spring Boot 3.1): thread pool limits concurrency
+@Bean
+public TaskExecutor taskExecutor() {
+    var exec = new ThreadPoolTaskExecutor();
+    exec.setCorePoolSize(50);
+    exec.setMaxPoolSize(200);
+    return exec;
+}
+
+// After (Spring Boot 3.2+): one line, unlimited concurrency
+// application.yml
+spring:
+  threads:
+    virtual:
+      enabled: true
+// That's it. Tomcat, @Async, @Scheduled all use virtual threads.</code></pre>
+    </div>
+  </div>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">application.yml · config/AsyncConfig.java</div>
+    <pre><code class="language-java">// application.yml
+spring:
+  threads:
+    virtual:
+      enabled: true  # All Tomcat threads become virtual
+
+// AsyncConfig.java
+@Bean(name = "taskExecutor")
+public AsyncTaskExecutor taskExecutor() {
+    return new TaskExecutorAdapter(
+        Executors.newVirtualThreadPerTaskExecutor()
+    );
+}
+
+// DigestScheduler.java — blocking SMTP is fine
+@Async
+@Scheduled(cron = "0 0 7 * * MON-FRI")
+public void sendDailyDigest() {
+    studentRepository.findAll()
+        .forEach(s -> emailService.sendDigest(s)); // blocks — virtual thread parks
+}</code></pre>
+  </div>
+</div>
+
+<div class="topic" id="record-patterns">
+  <div class="topic-title">Record Patterns — Standard <span class="jep">JEP 440</span></div>
+  <div class="in-project-note">Used in this project — destructure <code>ServiceResult</code> subtypes directly in switch arms.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>Record patterns graduate to standard in Java 21. They allow inline destructuring of records in <code>instanceof</code> checks and switch expressions. Patterns can be nested to any depth. The <code>_</code> unnamed pattern (JEP 443) ignores unwanted components. Combined with sealed classes, they provide a complete algebraic pattern matching system.</p>
+  <div class="section-label"><span class="num">2</span> Examples</div>
+  <div class="examples">
+    <div class="example">
+      <div class="example-header"><span class="example-title">Destructure in instanceof</span><span class="ex-badge ex-simple">Simple</span></div>
+      <pre><code class="language-java">record Point(int x, int y) {}
+record Circle(Point center, int radius) {}
+
+Object shape = new Circle(new Point(0, 0), 5);
+
+// Without record patterns
+if (shape instanceof Circle c) {
+    int x = c.center().x();  // still need accessor calls
+}
+
+// With record patterns — destructure directly
+if (shape instanceof Circle(Point(var x, var y), var r)) {
+    System.out.println("Circle at (" + x + "," + y + ") r=" + r);
+}</code></pre>
+    </div>
+    <div class="example">
+      <div class="example-header"><span class="example-title">Nested patterns in switch</span><span class="ex-badge ex-realtime">Real-time</span></div>
+      <pre><code class="language-java">// Destructure 2 levels deep — ServiceResult → StudentDTO components
+return switch (studentService.getStudent(id, principal)) {
+    case ServiceResult.Success(StudentDTO(var sid, var name, var roll, _)) ->
+        ResponseEntity.ok(Map.of("id", sid, "name", name, "roll", roll));
+    case ServiceResult.NotFound(var msg) ->
+        ResponseEntity.status(404)
+            .body(ProblemDetail.forStatusAndDetail(NOT_FOUND, msg));
+    case ServiceResult.Forbidden(var msg) ->
+        ResponseEntity.status(403)
+            .body(ProblemDetail.forStatusAndDetail(FORBIDDEN, msg));
+    case ServiceResult.ValidationError(var msg) ->
+        ResponseEntity.badRequest()
+            .body(ProblemDetail.forStatusAndDetail(BAD_REQUEST, msg));
+    // Compiler verifies all 4 sealed subtypes covered — no default needed
+};</code></pre>
+    </div>
+  </div>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">controller/AdminController.java · controller/ResultController.java</div>
+    <pre><code class="language-java">@PutMapping("/{id}")
+public ResponseEntity&lt;StudentDTO&gt; update(
+        @PathVariable Long id,
+        @Valid @RequestBody UpdateStudentRequest req,
+        @AuthenticationPrincipal UserPrincipal principal) {
+
+    return switch (studentService.updateStudent(id, req, principal)) {
+        case ServiceResult.Success(var dto)         -> ResponseEntity.ok(dto);
+        case ServiceResult.NotFound(var msg)        -> ResponseEntity.notFound().build();
+        case ServiceResult.Forbidden(var msg)       -> ResponseEntity.status(403).build();
+        case ServiceResult.ValidationError(var msg) -> ResponseEntity.badRequest().build();
+    };
+}</code></pre>
+  </div>
+</div>
+
+<div class="topic" id="pattern-switch">
+  <div class="topic-title">Pattern Matching for Switch — Standard <span class="jep">JEP 441</span></div>
+  <div class="in-project-note">Used in this project — controller dispatches <code>ServiceResult</code> with exhaustive switch, no default needed.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>Pattern matching in switch allows case labels with type patterns, guarded patterns (<code>when</code> keyword), and null handling. Combined with sealed classes, the compiler verifies exhaustiveness — compile error if a case is missing. This replaces chains of <code>if/instanceof</code> with clean, verified, readable switch expressions.</p>
+  <div class="section-label"><span class="num">2</span> Examples</div>
+  <div class="examples">
+    <div class="example">
+      <div class="example-header"><span class="example-title">Type patterns in switch</span><span class="ex-badge ex-simple">Simple</span></div>
+      <pre><code class="language-java">// Old — if/instanceof chain
+String describe(Object obj) {
+    if (obj instanceof Integer i) return "int: " + i;
+    else if (obj instanceof String s) return "str: " + s;
+    else if (obj instanceof List&lt;?&gt; l) return "list size: " + l.size();
+    else return "other";
+}
+
+// New — switch with type patterns
+String describe(Object obj) {
+    return switch (obj) {
+        case Integer i       -> "int: " + i;
+        case String s        -> "str: " + s;
+        case List&lt;?&gt; l       -> "list size: " + l.size();
+        case null            -> "null";
+        default              -> "other";
+    };
+}</code></pre>
+    </div>
+    <div class="example">
+      <div class="example-header"><span class="example-title">Guarded patterns with when</span><span class="ex-badge ex-medium">Medium</span></div>
+      <pre><code class="language-java">String classify(Object obj) {
+    return switch (obj) {
+        case Integer i when i &lt; 0      -> "negative int";
+        case Integer i when i == 0     -> "zero";
+        case Integer i                 -> "positive int: " + i;
+        case String s when s.isBlank() -> "blank string";
+        case String s                  -> "string: " + s;
+        case null                      -> "null";
+        default                        -> "other: " + obj.getClass().getSimpleName();
+    };
+}</code></pre>
+    </div>
+  </div>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">controller/AdminController.java</div>
+    <pre><code class="language-java">// Exhaustive switch on sealed ServiceResult — no default needed
+private ResponseEntity&lt;?&gt; toResponse(ServiceResult&lt;?&gt; result) {
+    return switch (result) {
+        case ServiceResult.Success(var v) ->
+            ResponseEntity.ok(v);
+        case ServiceResult.NotFound(var msg) ->
+            ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ProblemDetail.forStatusAndDetail(NOT_FOUND, msg));
+        case ServiceResult.Forbidden(var msg) ->
+            ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ProblemDetail.forStatusAndDetail(FORBIDDEN, msg));
+        case ServiceResult.ValidationError(var msg) ->
+            ResponseEntity.badRequest()
+                .body(ProblemDetail.forStatusAndDetail(BAD_REQUEST, msg));
+        // Sealed: compiler knows these 4 are all possible cases
+    };
+}</code></pre>
+  </div>
+</div>
+
+<div class="topic" id="sequenced">
+  <div class="topic-title">Sequenced Collections — Standard <span class="jep">JEP 431</span></div>
+  <div class="in-project-note">Used in this project — <code>marks.getFirst()</code> / <code>marks.getLast()</code> on sorted mark lists.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>Java 21 introduced three new interfaces: <code>SequencedCollection</code>, <code>SequencedSet</code>, and <code>SequencedMap</code>. They add <code>getFirst()</code>, <code>getLast()</code>, <code>addFirst()</code>, <code>addLast()</code>, <code>removeFirst()</code>, <code>removeLast()</code>, and <code>reversed()</code>. Before this, getting first/last required error-prone <code>list.get(0)</code> / <code>list.get(list.size()-1)</code>. All <code>List</code>, <code>Deque</code>, <code>LinkedHashSet</code>, and <code>LinkedHashMap</code> implementations now expose this uniform API.</p>
+  <div class="section-label"><span class="num">2</span> Examples</div>
+  <div class="examples">
+    <div class="example">
+      <div class="example-header"><span class="example-title">getFirst, getLast, reversed</span><span class="ex-badge ex-simple">Simple</span></div>
+      <pre><code class="language-java">List&lt;String&gt; names = new ArrayList&lt;&gt;(List.of("Alice", "Bob", "Charlie"));
+
+// Before Java 21 — verbose and error-prone
+String first = names.get(0);               // IndexOutOfBoundsException if empty
+String last  = names.get(names.size() - 1); // error-prone
+
+// Java 21 — clean
+String first = names.getFirst();  // NoSuchElementException if empty (cleaner)
+String last  = names.getLast();
+
+// Reversed view — no copy
+List&lt;String&gt; reversed = names.reversed();  // [Charlie, Bob, Alice]
+
+// Works on Deque, LinkedHashSet, LinkedHashMap too
+LinkedHashSet&lt;String&gt; set = new LinkedHashSet&lt;&gt;(Set.of("a","b","c"));
+set.getFirst();  // first inserted element</code></pre>
+    </div>
+  </div>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">service/impl/ResultServiceImpl.java</div>
+    <pre><code class="language-java">public ResultSummaryDTO getSummary(Long studentId) {
+    var marks = markRepository.findByStudentIdOrderByExamDateAsc(studentId);
+
+    // Java 21 — clean first/last access
+    var earliest = marks.getFirst();   // was: marks.get(0)
+    var latest   = marks.getLast();    // was: marks.get(marks.size()-1)
+
+    // Reversed view — no copy, no Collections.reverse()
+    var recent3 = marks.reversed().stream().limit(3).toList();
+
+    return new ResultSummaryDTO(
+        studentId,
+        marks.stream().mapToInt(Mark::getScore).sum(),
+        marks.stream().mapToInt(Mark::getScore).average().orElse(0),
+        marks.stream().filter(m -> m.getScore() >= 35).count(),
+        Map.of("earliest", earliest.getScore(), "latest", latest.getScore())
+    );
+}</code></pre>
+  </div>
+</div>
+
+<div class="topic" id="unnamed-patterns">
+  <div class="topic-title">Unnamed Patterns &amp; Variables <span class="jep">JEP 443 — Preview</span></div>
+  <div class="in-project-note">Used in this project — <code>case NotFound(_)</code> when message not needed, <code>_</code> in record destructuring to skip fields.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>The underscore <code>_</code> can be used as an unnamed pattern (match a type, don't bind it) or unnamed variable (declare a variable, never use it). In switch: <code>case NotFound(_)</code> matches but ignores the message. In record destructuring: <code>StudentDTO(var id, _, _, _)</code> extracts only id. In catch blocks: <code>catch (IOException _)</code>. Eliminates dummy variable names like <code>ignored</code> or <code>unused</code>.</p>
+  <div class="section-label"><span class="num">2</span> Examples</div>
+  <div class="examples">
+    <div class="example">
+      <div class="example-header"><span class="example-title">Unnamed in switch and catch</span><span class="ex-badge ex-simple">Simple</span></div>
+      <pre><code class="language-java">// Unnamed pattern in switch — match type, ignore value
+return switch (result) {
+    case ServiceResult.Success(var dto)   -> ResponseEntity.ok(dto);
+    case ServiceResult.NotFound(_)        -> ResponseEntity.notFound().build();
+    case ServiceResult.Forbidden(_)       -> ResponseEntity.status(403).build();
+    case ServiceResult.ValidationError(_) -> ResponseEntity.badRequest().build();
+};
+
+// Unnamed in catch — exception object not needed
+try {
+    return processResult(id);
+} catch (RuntimeException _) {
+    return ResponseEntity.internalServerError().build();
+}
+
+// Unnamed variable in try-with-resources
+try (var _ = lockService.acquire(studentId)) {
+    return markRepository.save(mark);
+}</code></pre>
+    </div>
+    <div class="example">
+      <div class="example-header"><span class="example-title">Unnamed in record destructuring</span><span class="ex-badge ex-medium">Medium</span></div>
+      <pre><code class="language-java">// Only extract id and name from StudentDTO — ignore rollNumber and email
+return switch (studentService.getStudent(id, principal)) {
+    case ServiceResult.Success(StudentDTO(var sid, var name, _, _)) ->
+        "Student #%d: %s".formatted(sid, name);
+    case ServiceResult.NotFound(_) ->
+        "Not found";
+    default ->
+        "Error";
+};</code></pre>
+    </div>
+  </div>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">controller/AdminController.java</div>
+    <pre><code class="language-java">@DeleteMapping("/{id}")
+public ResponseEntity&lt;Void&gt; delete(@PathVariable Long id,
+                                    @AuthenticationPrincipal UserPrincipal p) {
+    return switch (studentService.deleteStudent(id, p)) {
+        case ServiceResult.Success(_)         -> ResponseEntity.noContent().build();
+        case ServiceResult.NotFound(_)        -> ResponseEntity.notFound().build();
+        case ServiceResult.Forbidden(var msg) -> ResponseEntity.status(403).build();
+        case ServiceResult.ValidationError(_) -> ResponseEntity.badRequest().build();
+    };
+}</code></pre>
+  </div>
+</div>
+
+<div class="topic" id="scoped-values-preview">
+  <div class="topic-title">Scoped Values — Preview <span class="jep">JEP 446</span></div>
+  <div class="in-project-note">Used in this project — pass <code>UserPrincipal</code> request context without ThreadLocal or SecurityContext.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>Scoped values enter preview in Java 21 (promoted from incubator in Java 20). They are the modern replacement for <code>ThreadLocal</code> in virtual thread environments. Key advantages over <code>ThreadLocal</code>: immutable (no <code>set()</code>), automatically cleaned up at scope end (no <code>remove()</code>), don't inherit into child virtual threads by default (avoids accidental data sharing), and have lower memory footprint.</p>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">security/JwtAuthFilter.java · aspect/AuditAspect.java</div>
+    <pre><code class="language-java">// UserContext.java
+public class UserContext {
+    public static final ScopedValue&lt;UserPrincipal&gt; CURRENT_USER =
+        ScopedValue.newInstance();
+}
+
+// JwtAuthFilter — bind user for duration of this request's virtual thread
+ScopedValue.where(UserContext.CURRENT_USER, principal)
+    .run(() -> filterChain.doFilter(request, response));
+// Automatically unbound when run() returns
+
+// AuditAspect — no parameter needed
+@Around("@annotation(Auditable)")
+public Object audit(ProceedingJoinPoint pjp) throws Throwable {
+    var user = UserContext.CURRENT_USER.get();  // always available in request scope
+    var start = Instant.now();
+    var result = pjp.proceed();
+    auditRepo.save(new AuditLog(
+        pjp.getSignature().getName(), user.getUsername(),
+        Duration.between(start, Instant.now()).toMillis()
+    ));
+    return result;
+}</code></pre>
+  </div>
+</div>
+
+<div class="topic" id="string-templates">
+  <div class="topic-title">String Templates — Preview <span class="jep">JEP 430</span></div>
+  <div class="in-project-note">Used in this project — email body construction, log messages, SQL snippet building.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>String templates (preview in Java 21, withdrawn in Java 23 for redesign) provide a safe, flexible string interpolation: <code>STR."Hello \{name}"</code>. Unlike <code>String.format()</code> or <code>formatted()</code>, templates are processed by a template processor (<code>STR</code>, <code>FMT</code>, or custom) which can validate, escape, or transform the result. <code>STR</code> is the standard interpolating processor. <code>FMT</code> supports format specifiers like <code>\{value:%.2f}</code>.</p>
+  <div class="section-label"><span class="num">2</span> Examples</div>
+  <div class="examples">
+    <div class="example">
+      <div class="example-header"><span class="example-title">STR template processor</span><span class="ex-badge ex-simple">Simple</span></div>
+      <pre><code class="language-java">String name  = "Alice";
+int    score = 87;
+String grade = "B";
+
+// String.format — positional, error-prone
+String msg1 = String.format("Student %s scored %d (%s)", name, score, grade);
+
+// String template — readable, checked at compile time
+String msg2 = STR."Student \{name} scored \{score} (\{grade})";
+
+// Multi-line template
+String email = STR."""
+    Dear \{name},
+    Your score for MATHS is \{score}/100.
+    Grade: \{grade}
+    """;</code></pre>
+    </div>
+    <div class="example">
+      <div class="example-header"><span class="example-title">Custom template processor (SQL safety)</span><span class="ex-badge ex-medium">Medium</span></div>
+      <pre><code class="language-java">// Custom processor for safe SQL (parameterized)
+StringTemplate.Processor&lt;PreparedStatement, SQLException&gt; DB =
+    stringTemplate -> {
+        String sql = String.join("?", stringTemplate.fragments());
+        PreparedStatement stmt = conn.prepareStatement(sql);
+        List&lt;Object&gt; params = stringTemplate.values();
+        for (int i = 0; i &lt; params.size(); i++)
+            stmt.setObject(i + 1, params.get(i));
+        return stmt;
+    };
+
+// Usage — values auto-parameterized, no SQL injection possible
+PreparedStatement ps = DB."SELECT * FROM marks WHERE student_id = \{studentId}
+                            AND score >= \{minScore}";</code></pre>
+    </div>
+  </div>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">scheduler/DigestScheduler.java · aspect/PerformanceAspect.java</div>
+    <pre><code class="language-java">// Email body using STR template
+private String buildEmail(String name, int mathScore, int sciScore, int engScore) {
+    return STR."""
+        Dear \{name},
+
+        Your results for this semester:
+        Maths:   \{mathScore}/100
+        Science: \{sciScore}/100
+        English: \{engScore}/100
+        Total:   \{mathScore + sciScore + engScore}/300
+
+        Log in at https://portal.example.com
+        """;
+}
+
+// Performance log using STR
+@Around("execution(* com.studentresults.service.*.*(..))")
+public Object measure(ProceedingJoinPoint pjp) throws Throwable {
+    var start = Instant.now();
+    var result = pjp.proceed();
+    var ms = Duration.between(start, Instant.now()).toMillis();
+    if (ms > 500) log.warn(STR."Slow: \{pjp.getSignature().getName()} took \{ms}ms");
+    return result;
+}</code></pre>
+  </div>
+</div>
+
+<div class="topic" id="zgc">
+  <div class="topic-title">Generational ZGC — Standard <span class="jep">JEP 439</span></div>
+  <div class="in-project-note">Used in this project — JVM flags <code>-XX:+UseZGC -XX:+ZGenerational</code> in production config.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>Generational ZGC adds young/old generation collection to ZGC. Most objects are short-lived (DTOs, request objects) — collecting them separately is far more efficient than collecting the whole heap. ZGC always maintained sub-millisecond pauses; Generational ZGC significantly improves throughput by spending less GC effort on long-lived objects. Enabled with <code>-XX:+UseZGC -XX:+ZGenerational</code>. Non-generational ZGC is deprecated in Java 21.</p>
+  <div class="section-label"><span class="num">2</span> Examples</div>
+  <div class="examples">
+    <div class="example">
+      <div class="example-header"><span class="example-title">GC comparison</span><span class="ex-badge ex-simple">Simple</span></div>
+      <pre><code class="language-java">// G1GC (default) — good throughput, pauses up to 200ms
+java -XX:+UseG1GC -jar student.jar
+
+// ZGC (Java 15+) — sub-ms pauses, higher memory overhead
+java -XX:+UseZGC -jar student.jar
+
+// Generational ZGC (Java 21) — sub-ms pauses + better throughput
+java -XX:+UseZGC -XX:+ZGenerational -jar student.jar
+
+// Impact for Student Portal:
+// - StudentDTO, MarkDTO objects → young gen, collected fast
+// - Cached entities, connection pools → old gen, rarely collected
+// - HTTP request/response objects → young gen, cheap to collect</code></pre>
+    </div>
+  </div>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">pom.xml — spring-boot-maven-plugin JVM args</div>
+    <pre><code class="language-xml">&lt;plugin&gt;
+  &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+  &lt;artifactId&gt;spring-boot-maven-plugin&lt;/artifactId&gt;
+  &lt;configuration&gt;
+    &lt;jvmArguments&gt;
+      -XX:+UseZGC
+      -XX:+ZGenerational
+      -Xms512m
+      -Xmx2g
+    &lt;/jvmArguments&gt;
+  &lt;/configuration&gt;
+&lt;/plugin&gt;</code></pre>
+  </div>
+</div>
+
+<div class="page-nav">
+  <a href="java20.html">← Java 20</a>
+  <a href="index.html">↑ All Versions</a>
+</div>
+</main>
+</div>
+<footer>Student Portal · Java 21 + Spring Boot 3.3.12</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+<script>
+const links=document.querySelectorAll('.sidebar-link'),topics=document.querySelectorAll('.topic');
+const obs=new IntersectionObserver(e=>{e.forEach(en=>{if(en.isIntersecting){links.forEach(l=>l.classList.remove('active'));const a=document.querySelector(`.sidebar-link[href="#${en.target.id}"]`);if(a)a.classList.add('active');}});},{rootMargin:'-49px 0px -60% 0px'});
+topics.forEach(t=>obs.observe(t));
+</script>
+</body>
+</html>

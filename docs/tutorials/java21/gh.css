@@ -1,0 +1,107 @@
+/* GitHub Pages Light Theme — shared across all tutorial pages */
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif;font-size:16px;line-height:1.6;color:#24292f;background:#fff}
+a{color:#0969da;text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* HEADER */
+.gh-header{background:#24292f;padding:12px 24px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100;border-bottom:1px solid #30363d}
+.gh-logo{color:#fff;font-weight:600;font-size:0.9375rem;display:flex;align-items:center;gap:8px;white-space:nowrap}
+.gh-logo svg{fill:#fff;width:26px;height:26px;flex-shrink:0}
+.gh-breadcrumb{color:#8b949e;font-size:0.8125rem}
+.gh-breadcrumb a{color:#cdd9e5}
+.gh-breadcrumb a:hover{color:#fff;text-decoration:none}
+.gh-breadcrumb span{color:#8b949e}
+
+/* LAYOUT */
+.layout{display:flex;min-height:calc(100vh - 49px)}
+
+/* SIDEBAR */
+.sidebar{width:260px;flex-shrink:0;border-right:1px solid #d0d7de;background:#f6f8fa;position:sticky;top:49px;height:calc(100vh - 49px);overflow-y:auto}
+.sidebar::-webkit-scrollbar{width:4px}
+.sidebar::-webkit-scrollbar-thumb{background:#d0d7de;border-radius:2px}
+.sidebar-section{padding:16px 16px 4px;font-size:0.75rem;font-weight:600;color:#57606a;text-transform:uppercase;letter-spacing:0.05em;border-top:1px solid #d0d7de;margin-top:4px}
+.sidebar-section:first-child{border-top:none;margin-top:0}
+.sidebar-link{display:block;padding:5px 16px;font-size:0.8125rem;color:#24292f;border-left:2px solid transparent;transition:background 0.1s}
+.sidebar-link:hover{background:#e7ecf0;text-decoration:none;color:#0969da}
+.sidebar-link.active{color:#0969da;border-left-color:#0969da;background:#ddf4ff;font-weight:500}
+.sidebar-nav-header{padding:12px 16px 8px;border-bottom:1px solid #d0d7de}
+.sidebar-nav-header a{font-size:0.8125rem;color:#57606a;display:flex;align-items:center;gap:4px}
+.sidebar-nav-header a:hover{color:#0969da;text-decoration:none}
+.sidebar-versions{padding:8px 0 16px}
+.ver-link{display:block;padding:4px 16px;font-size:0.8125rem;color:#57606a}
+.ver-link:hover{text-decoration:none;color:#0969da}
+.ver-link.current-ver{font-weight:600;color:#0969da}
+
+/* MAIN */
+.main{flex:1;padding:32px 40px;max-width:860px;min-width:0}
+
+/* VERSION HEADER */
+.ver-header{margin-bottom:32px;padding-bottom:16px;border-bottom:1px solid #d0d7de}
+.ver-meta{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.badge{display:inline-block;font-size:0.75rem;font-weight:500;padding:2px 8px;border-radius:2em}
+.badge-lts{background:#dafbe1;color:#1a7f37;border:1px solid #4ac26b66}
+.badge-current{background:#ddf4ff;color:#0969da;border:1px solid #54aeff66}
+.badge-preview{background:#fff8c5;color:#9a6700;border:1px solid #d4a72c66}
+.badge-standard{background:#f3f0ff;color:#6639ba;border:1px solid #8256d066}
+.ver-header h1{font-size:1.625rem;font-weight:600;color:#24292f}
+.ver-header p{margin-top:8px;color:#57606a;font-size:0.9375rem}
+
+/* TOPIC */
+.topic{margin-bottom:48px;scroll-margin-top:65px}
+.topic-title{font-size:1.25rem;font-weight:600;color:#24292f;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid #d0d7de;display:flex;align-items:center;gap:8px}
+.topic-title .jep{font-size:0.75rem;font-weight:500;color:#57606a;font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,monospace}
+
+/* NOT IN PROJECT note */
+.not-in-project{background:#fff8c5;border:1px solid #d4a72c;border-radius:6px;padding:10px 14px;font-size:0.8125rem;color:#7d4e00;margin-bottom:16px;display:flex;align-items:flex-start;gap:8px}
+.not-in-project::before{content:"ℹ️";flex-shrink:0}
+
+/* IN PROJECT note */
+.in-project-note{background:#dafbe1;border:1px solid #4ac26b;border-radius:6px;padding:10px 14px;font-size:0.8125rem;color:#1a7f37;margin-bottom:16px;display:flex;align-items:flex-start;gap:8px}
+.in-project-note::before{content:"✅";flex-shrink:0}
+
+/* SECTION LABELS */
+.section-label{font-size:0.8125rem;font-weight:600;color:#24292f;margin:20px 0 8px;display:flex;align-items:center;gap:8px}
+.section-label .num{background:#0969da;color:#fff;font-size:0.6875rem;width:18px;height:18px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+
+p{margin-bottom:12px;color:#24292f;font-size:0.9375rem}
+p:last-child{margin-bottom:0}
+
+/* CODE */
+pre{background:#f6f8fa;border:1px solid #d0d7de;border-radius:6px;padding:16px;overflow-x:auto;font-size:0.8125rem;line-height:1.55;margin:12px 0}
+code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;font-size:0.8125rem}
+p code,li code{background:#afb8c133;padding:2px 5px;border-radius:4px;font-size:0.875em;color:#24292f}
+
+/* EXAMPLES */
+.examples{display:flex;flex-direction:column;gap:12px;margin:8px 0 16px}
+.example{border:1px solid #d0d7de;border-radius:6px;overflow:hidden}
+.example-header{background:#f6f8fa;border-bottom:1px solid #d0d7de;padding:8px 14px;display:flex;align-items:center;justify-content:space-between}
+.example-title{font-size:0.8125rem;font-weight:600;color:#24292f}
+.ex-badge{font-size:0.6875rem;font-weight:600;padding:2px 8px;border-radius:2em}
+.ex-simple{background:#dafbe1;color:#1a7f37;border:1px solid #4ac26b66}
+.ex-medium{background:#fff8c5;color:#9a6700;border:1px solid #d4a72c66}
+.ex-realtime{background:#ffebe9;color:#cf222e;border:1px solid #ff818266}
+.example pre{margin:0;border:none;border-radius:0}
+
+/* PROJECT BOX */
+.project-box{border:1px solid #d0d7de;border-radius:6px;overflow:hidden;margin:8px 0}
+.project-box-header{background:#f6f8fa;border-bottom:1px solid #d0d7de;padding:8px 14px;font-size:0.75rem;font-weight:600;color:#57606a;font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,monospace;display:flex;align-items:center;gap:6px}
+.project-box-header::before{content:"📁"}
+.project-box pre{margin:0;border:none;border-radius:0;border-top:none}
+
+/* NAV FOOTER */
+.page-nav{display:flex;justify-content:space-between;margin-top:48px;padding-top:16px;border-top:1px solid #d0d7de;gap:16px}
+.page-nav a{font-size:0.875rem;color:#0969da;display:flex;align-items:center;gap:4px}
+
+footer{padding:24px 32px;border-top:1px solid #d0d7de;background:#f6f8fa;text-align:center;font-size:0.8rem;color:#57606a}
+
+/* SYNTAX HIGHLIGHT — minimal github style */
+.kw{color:#cf222e}
+.st{color:#0a3069}
+.cm{color:#6e7781;font-style:italic}
+.cn{color:#953800}
+.an{color:#8250df}
+.nm{color:#0550ae}
+.kw2{color:#8250df}
+</style>

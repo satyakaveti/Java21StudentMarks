@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Java 18 Tutorial — Student Portal</title>
+<link rel="stylesheet" href="gh.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css"/>
+</head>
+<body>
+<header class="gh-header">
+  <div class="gh-logo"><svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>Student Portal</div>
+  <span class="gh-breadcrumb"><a href="../index.html">tutorials</a> / <a href="index.html">java21</a> / <span>java18</span></span>
+</header>
+<div class="layout">
+<nav class="sidebar">
+  <div class="sidebar-nav-header"><a href="index.html">← All Java Versions</a></div>
+  <div class="sidebar-section">Java 18 Topics</div>
+  <a class="sidebar-link" href="#utf8">UTF-8 by Default</a>
+  <a class="sidebar-link" href="#simple-web-server">Simple Web Server</a>
+  <a class="sidebar-link" href="#javadoc-snippets">JavaDoc Code Snippets</a>
+  <div class="sidebar-section">Other Versions</div>
+  <div class="sidebar-versions">
+    <a class="ver-link" href="java8.html">Java 8 LTS</a>
+    <a class="ver-link" href="java9.html">Java 9</a>
+    <a class="ver-link" href="java10.html">Java 10</a>
+    <a class="ver-link" href="java11.html">Java 11 LTS</a>
+    <a class="ver-link" href="java12.html">Java 12</a>
+    <a class="ver-link" href="java13.html">Java 13</a>
+    <a class="ver-link" href="java14.html">Java 14</a>
+    <a class="ver-link" href="java15.html">Java 15</a>
+    <a class="ver-link" href="java16.html">Java 16</a>
+    <a class="ver-link" href="java17.html">Java 17 LTS</a>
+    <a class="ver-link current-ver" href="java18.html">Java 18</a>
+    <a class="ver-link" href="java19.html">Java 19</a>
+    <a class="ver-link" href="java20.html">Java 20</a>
+    <a class="ver-link" href="java21.html">Java 21 LTS ★</a>
+  </div>
+</nav>
+<main class="main">
+<div class="ver-header">
+  <div class="ver-meta"><span style="font-size:0.875rem;color:#57606a">Released March 2022</span></div>
+  <h1>Java 18 — UTF-8 Default, Simple Web Server &amp; JavaDoc Snippets</h1>
+  <p>A smaller release focused on quality of life improvements. UTF-8 became the default charset, eliminating a long-standing source of encoding bugs across platforms.</p>
+</div>
+
+<div class="topic" id="utf8">
+  <div class="topic-title">UTF-8 by Default <span class="jep">JEP 400</span></div>
+  <div class="in-project-note">Benefits this project — student names with Unicode characters (Telugu, Hindi, etc.) are handled correctly without explicit charset specification.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>Before Java 18, the default charset was platform-dependent — UTF-8 on Linux/macOS, Windows-1252 on Windows. This caused file I/O, stream reading, and string conversion bugs when code ran on different OSes. Java 18 standardized UTF-8 as the default for all Java APIs regardless of platform. APIs that use <code>Charset.defaultCharset()</code> now always return UTF-8.</p>
+  <div class="section-label"><span class="num">2</span> Examples</div>
+  <div class="examples">
+    <div class="example">
+      <div class="example-header"><span class="example-title">Before vs after Java 18</span><span class="ex-badge ex-simple">Simple</span></div>
+      <pre><code class="language-java">// Before Java 18 — explicit charset required for cross-platform safety
+Files.writeString(Path.of("names.txt"), "Satya కవేటి", StandardCharsets.UTF_8);
+String content = Files.readString(Path.of("names.txt"), StandardCharsets.UTF_8);
+
+// Java 18+ — UTF-8 is the default
+Files.writeString(Path.of("names.txt"), "Satya కవేటి"); // UTF-8 by default
+String content = Files.readString(Path.of("names.txt")); // UTF-8 by default
+
+// Check default charset
+Charset.defaultCharset(); // always UTF-8 in Java 18+</code></pre>
+    </div>
+    <div class="example">
+      <div class="example-header"><span class="example-title">Impact on CSV import</span><span class="ex-badge ex-medium">Medium</span></div>
+      <pre><code class="language-java">// Java 17 on Windows — might read garbled Unicode names
+BufferedReader reader = new BufferedReader(new FileReader("students.csv"));
+
+// Java 18+ — same code, UTF-8 on all platforms
+BufferedReader reader = new BufferedReader(new FileReader("students.csv"));
+// "Priya Müller" reads correctly on Windows, Linux, macOS
+
+// For safety, still explicit is best practice:
+BufferedReader reader = new BufferedReader(
+    new InputStreamReader(new FileInputStream("students.csv"), StandardCharsets.UTF_8));</code></pre>
+    </div>
+  </div>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">application.yml — UTF-8 encoding configured</div>
+    <pre><code class="language-yaml"># application.yml — explicit UTF-8 for file resources (belt and suspenders)
+spring:
+  mandatory-file-encoding: UTF-8  # fails fast if JVM default is not UTF-8
+
+server:
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true</code></pre>
+  </div>
+</div>
+
+<div class="topic" id="simple-web-server">
+  <div class="topic-title">Simple Web Server <span class="jep">JEP 408</span></div>
+  <div class="not-in-project">Not used in this project. The project uses Spring Boot's embedded Tomcat. The Simple Web Server is a dev tool for serving static files.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>Java 18 ships a minimal HTTP file server usable from the command line: <code>jwebserver</code>. Serves static files from the current directory on port 8000. Useful for quick demos, serving HTML/CSS during development, or testing HTTP clients without a full web framework. Not suitable for production use — no SSL, no routing, no dynamic content.</p>
+  <div class="section-label"><span class="num">2</span> Examples</div>
+  <div class="examples">
+    <div class="example">
+      <div class="example-header"><span class="example-title">Command line usage</span><span class="ex-badge ex-simple">Simple</span></div>
+      <pre><code class="language-java">// Serve current directory on port 8000
+$ jwebserver
+Serving /Users/satyakaveti/Code/Workspace/Own/Java21StudentMarks
+URL http://127.0.0.1:8000/
+
+// Custom port and directory
+$ jwebserver -p 9090 -d /path/to/docs
+
+// Now you can access:
+// http://localhost:9090/docs/tutorials/index.html</code></pre>
+    </div>
+    <div class="example">
+      <div class="example-header"><span class="example-title">Programmatic usage</span><span class="ex-badge ex-medium">Medium</span></div>
+      <pre><code class="language-java">// Create a simple file server programmatically
+var server = SimpleFileServer.createFileServer(
+    new InetSocketAddress(8080),
+    Path.of("/docs"),
+    SimpleFileServer.OutputLevel.VERBOSE
+);
+server.start();
+// Serves /docs at http://localhost:8080
+// No Spring, no dependencies</code></pre>
+    </div>
+  </div>
+</div>
+
+<div class="topic" id="javadoc-snippets">
+  <div class="topic-title">JavaDoc Code Snippets <span class="jep">JEP 413</span></div>
+  <div class="not-in-project">Not in application source code. Used in library/API documentation. The <code>@snippet</code> tag enables validated, highlighted code examples in Javadoc.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>Java 18 introduced the <code>{@snippet ...}</code> Javadoc tag to replace the <code>&lt;pre&gt;{@code ...}&lt;/pre&gt;</code> pattern. Snippets can reference external files (validated at compile time), include region markers, and have syntax highlighting in generated docs. This ensures code examples in docs stay in sync with actual source.</p>
+  <div class="section-label"><span class="num">2</span> Examples</div>
+  <div class="examples">
+    <div class="example">
+      <div class="example-header"><span class="example-title">Inline and file-based snippets</span><span class="ex-badge ex-simple">Simple</span></div>
+      <pre><code class="language-java">/**
+ * Returns the grade for a given score.
+ *
+ * {@snippet :
+ *   int score = 87;
+ *   String grade = resultService.gradeFor(score); // grade == "B"
+ * }
+ *
+ * External file snippet (validated at compile time):
+ * {@snippet file="GradeExample.java" region="gradeCalc"}
+ */
+public String gradeFor(int score) { ... }</code></pre>
+    </div>
+  </div>
+</div>
+
+<div class="page-nav">
+  <a href="java17.html">← Java 17</a>
+  <a href="java19.html">Java 19 →</a>
+</div>
+</main>
+</div>
+<footer>Student Portal · Java 21 + Spring Boot 3.3.12</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+<script>
+const links=document.querySelectorAll('.sidebar-link'),topics=document.querySelectorAll('.topic');
+const obs=new IntersectionObserver(e=>{e.forEach(en=>{if(en.isIntersecting){links.forEach(l=>l.classList.remove('active'));const a=document.querySelector(`.sidebar-link[href="#${en.target.id}"]`);if(a)a.classList.add('active');}});},{rootMargin:'-49px 0px -60% 0px'});
+topics.forEach(t=>obs.observe(t));
+</script>
+</body>
+</html>

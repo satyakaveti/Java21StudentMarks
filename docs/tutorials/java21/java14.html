@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Java 14 Tutorial — Student Portal</title>
+<link rel="stylesheet" href="gh.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css"/>
+</head>
+<body>
+<header class="gh-header">
+  <div class="gh-logo"><svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>Student Portal</div>
+  <span class="gh-breadcrumb"><a href="../index.html">tutorials</a> / <a href="index.html">java21</a> / <span>java14</span></span>
+</header>
+<div class="layout">
+<nav class="sidebar">
+  <div class="sidebar-nav-header"><a href="index.html">← All Java Versions</a></div>
+  <div class="sidebar-section">Java 14 Topics</div>
+  <a class="sidebar-link" href="#records">Records (Preview)</a>
+  <a class="sidebar-link" href="#pattern-instanceof">Pattern Matching instanceof (Preview)</a>
+  <a class="sidebar-link" href="#helpful-npe">Helpful NullPointerExceptions</a>
+  <a class="sidebar-link" href="#switch-standard">Switch Expressions (Standard)</a>
+  <div class="sidebar-section">Other Versions</div>
+  <div class="sidebar-versions">
+    <a class="ver-link" href="java8.html">Java 8 LTS</a>
+    <a class="ver-link" href="java9.html">Java 9</a>
+    <a class="ver-link" href="java10.html">Java 10</a>
+    <a class="ver-link" href="java11.html">Java 11 LTS</a>
+    <a class="ver-link" href="java12.html">Java 12</a>
+    <a class="ver-link" href="java13.html">Java 13</a>
+    <a class="ver-link current-ver" href="java14.html">Java 14</a>
+    <a class="ver-link" href="java15.html">Java 15</a>
+    <a class="ver-link" href="java16.html">Java 16</a>
+    <a class="ver-link" href="java17.html">Java 17 LTS</a>
+    <a class="ver-link" href="java18.html">Java 18</a>
+    <a class="ver-link" href="java19.html">Java 19</a>
+    <a class="ver-link" href="java20.html">Java 20</a>
+    <a class="ver-link" href="java21.html">Java 21 LTS ★</a>
+  </div>
+</nav>
+<main class="main">
+<div class="ver-header">
+  <div class="ver-meta"><span class="badge badge-preview">Preview</span><span style="font-size:0.875rem;color:#57606a">Released March 2020</span></div>
+  <h1>Java 14 — Records, Pattern Matching &amp; Helpful NPEs</h1>
+  <p>Records and pattern matching for <code>instanceof</code> entered preview. Switch expressions became standard. Helpful NullPointerExceptions became a game changer for debugging.</p>
+</div>
+
+<div class="topic" id="records">
+  <div class="topic-title">Records <span class="jep">JEP 359 — Preview → Standard in Java 16</span></div>
+  <div class="in-project-note">Used in this project — all DTOs and request/response objects: <code>StudentDTO</code>, <code>MarkDTO</code>, <code>CreateMarkRequest</code>, <code>AuthResponse</code>, <code>AppProperties</code>.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>Records are immutable data carriers. A single <code>record</code> declaration auto-generates: constructor, accessors (named after components, not <code>getXxx</code>), <code>equals()</code>, <code>hashCode()</code>, and <code>toString()</code>. Fields are implicitly <code>private final</code>. Records cannot extend classes but can implement interfaces. A compact constructor allows validation before field assignment.</p>
+  <div class="section-label"><span class="num">2</span> Examples</div>
+  <div class="examples">
+    <div class="example">
+      <div class="example-header"><span class="example-title">Basic record — replaces DTO class</span><span class="ex-badge ex-simple">Simple</span></div>
+      <pre><code class="language-java">// 40+ lines of boilerplate → 1 line
+public record StudentDTO(Long id, String name, String rollNumber, String email) {}
+
+// Usage — accessors named after components (not getXxx)
+var dto = new StudentDTO(1L, "Alice", "STU001", "alice@example.com");
+dto.name();        // "Alice"
+dto.rollNumber();  // "STU001"
+dto.id();          // 1L
+
+// equals/hashCode/toString auto-generated
+System.out.println(dto);
+// StudentDTO[id=1, name=Alice, rollNumber=STU001, email=alice@example.com]</code></pre>
+    </div>
+    <div class="example">
+      <div class="example-header"><span class="example-title">Record with compact constructor validation</span><span class="ex-badge ex-medium">Medium</span></div>
+      <pre><code class="language-java">public record CreateMarkRequest(
+    @NotNull Long subjectId,
+    @Min(0) @Max(100) int score,
+    @NotNull LocalDate examDate
+) {
+    // Compact constructor — runs before fields assigned
+    public CreateMarkRequest {
+        if (score &lt; 0 || score > 100)
+            throw new IllegalArgumentException("Score must be 0–100");
+        if (examDate.isAfter(LocalDate.now()))
+            throw new IllegalArgumentException("Exam date cannot be future");
+        // Fields assigned automatically after this block
+    }
+}</code></pre>
+    </div>
+    <div class="example">
+      <div class="example-header"><span class="example-title">Records in API controller</span><span class="ex-badge ex-realtime">Real-time</span></div>
+      <pre><code class="language-java">// Request record — validated on @RequestBody
+public record LoginRequest(
+    @NotBlank String username,
+    @NotBlank String password
+) {}
+
+// Response record
+public record AuthResponse(
+    String accessToken,
+    String refreshToken,
+    String role,
+    long expiresIn
+) {}
+
+@PostMapping("/login")
+public ResponseEntity&lt;AuthResponse&gt; login(@Valid @RequestBody LoginRequest req) {
+    var token = authService.login(req.username(), req.password());
+    return ResponseEntity.ok(new AuthResponse(
+        token.accessToken(), token.refreshToken(), token.role(), 900
+    ));
+}</code></pre>
+    </div>
+  </div>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">dto/ — all DTOs are records</div>
+    <pre><code class="language-java">public record StudentDTO(Long id, String name, String rollNumber, String email) {}
+public record MarkDTO(Long id, String subject, int score, String grade, String status) {}
+public record ResultSummaryDTO(Long studentId, int total, double average,
+                                long passCount, Map&lt;String, Integer&gt; bySubject) {}
+public record CreateStudentRequest(@NotBlank String name,
+                                    @NotBlank String rollNumber,
+                                    @Email String email) {}
+public record LoginRequest(@NotBlank String username, @NotBlank String password) {}
+public record AuthResponse(String accessToken, String refreshToken, String role) {}
+
+// ConfigurationProperties as record (Java 17+)
+@ConfigurationProperties(prefix = "app")
+public record AppProperties(Jwt jwt, Email email, Cors cors) {
+    public record Jwt(String secret, long accessTokenExpiryMs, long refreshTokenExpiryMs) {}
+    public record Email(String from, boolean enabled) {}
+    public record Cors(List&lt;String&gt; allowedOrigins) {}
+}</code></pre>
+  </div>
+</div>
+
+<div class="topic" id="pattern-instanceof">
+  <div class="topic-title">Pattern Matching for instanceof <span class="jep">JEP 305 — Preview → Standard in Java 16</span></div>
+  <div class="in-project-note">Used in this project — event type checking in <code>NotificationService</code>.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>Before Java 14, every <code>instanceof</code> check needed a separate cast. Pattern matching combines the type test and cast in one: <code>if (obj instanceof String s)</code> — if true, <code>s</code> is in scope as a <code>String</code>. The bound variable <code>s</code> is only in scope where the pattern is known to match. Negation works: <code>if (!(obj instanceof String s)) return;</code> — <code>s</code> is available after the return.</p>
+  <div class="section-label"><span class="num">2</span> Examples</div>
+  <div class="examples">
+    <div class="example">
+      <div class="example-header"><span class="example-title">Eliminate redundant cast</span><span class="ex-badge ex-simple">Simple</span></div>
+      <pre><code class="language-java">// Before — check + cast (redundant)
+if (obj instanceof String) {
+    String s = (String) obj;    // redundant cast
+    System.out.println(s.length());
+}
+
+// After — check + bind
+if (obj instanceof String s) {
+    System.out.println(s.length());  // s is String here
+}
+
+// Works with negation too
+if (!(obj instanceof String s)) return;
+System.out.println(s.length());  // s in scope after guard</code></pre>
+    </div>
+    <div class="example">
+      <div class="example-header"><span class="example-title">Event dispatcher</span><span class="ex-badge ex-medium">Medium</span></div>
+      <pre><code class="language-java">@EventListener
+public void handleEvent(Object event) {
+    if (event instanceof MarksUpdatedEvent e) {
+        sendMarksNotification(e.getStudentId());
+    } else if (event instanceof StudentCreatedEvent e) {
+        sendWelcomeEmail(e.getStudentId());
+    } else if (event instanceof StudentDeletedEvent e) {
+        cleanupStudentData(e.getStudentId());
+    }
+    // No redundant casts anywhere
+}</code></pre>
+    </div>
+  </div>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">service/NotificationService.java</div>
+    <pre><code class="language-java">@EventListener
+public void onApplicationEvent(Object event) {
+    if (event instanceof MarksUpdatedEvent e) {
+        log.info("Marks updated for student {}", e.getStudentId());
+        sendMarksNotification(e.getStudentId());
+    } else if (event instanceof StudentCreatedEvent e) {
+        sendWelcomeEmail(e.getStudent());
+    } else if (event instanceof StudentDeletedEvent e) {
+        log.info("Student {} deleted, cleaning up", e.getStudentId());
+    }
+}</code></pre>
+  </div>
+</div>
+
+<div class="topic" id="helpful-npe">
+  <div class="topic-title">Helpful NullPointerExceptions <span class="jep">JEP 358</span></div>
+  <div class="in-project-note">Enabled by default — improves debugging throughout the project without any code changes.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>Before Java 14, NPEs said only the line number: <em>"NullPointerException at line 42"</em>. With helpful NPEs, the JVM message now says exactly which variable was null and which operation failed: <em>"Cannot invoke 'Student.getName()' because 'student' is null"</em>. Enabled by default in Java 14+. Dramatically reduces debug time for chained calls.</p>
+  <div class="section-label"><span class="num">2</span> Examples</div>
+  <div class="examples">
+    <div class="example">
+      <div class="example-header"><span class="example-title">Before vs after</span><span class="ex-badge ex-simple">Simple</span></div>
+      <pre><code class="language-java">// Code
+String city = student.getAddress().getCity().toUpperCase();
+
+// Java 13 NPE — useless
+// NullPointerException
+
+// Java 14+ NPE — precise
+// Cannot invoke "Address.getCity()" because the return value of
+// "Student.getAddress()" is null
+
+// Another example
+marks[0].getSubject().getName();
+// Cannot read the array element at index 0 because "marks" is null</code></pre>
+    </div>
+  </div>
+</div>
+
+<div class="topic" id="switch-standard">
+  <div class="topic-title">Switch Expressions — Standard <span class="jep">JEP 361</span></div>
+  <div class="in-project-note">Used in this project — switch expressions are now standard, no <code>--enable-preview</code> flag needed.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>Switch expressions graduated from preview (Java 12–13) to standard in Java 14. The arrow syntax, <code>yield</code>, multiple labels per arm, and exhaustiveness checks are all stable. No more <code>--enable-preview</code> flag required. This paved the way for pattern matching in switch (Java 21).</p>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">service/impl/ResultServiceImpl.java — standard, no preview flag</div>
+    <pre><code class="language-java">// Standard since Java 14 — no --enable-preview needed
+private String calculateGrade(int score) {
+    return switch (score) {
+        case int s when s >= 75 -> "A";
+        case int s when s >= 50 -> "B";
+        case int s when s >= 35 -> "C";
+        default                 -> "F";
+    };
+}
+
+private String passFailStatus(String grade) {
+    return switch (grade) {
+        case "A", "B", "C" -> "PASS";
+        case "F"            -> "FAIL";
+        default -> throw new IllegalArgumentException("Unknown: " + grade);
+    };
+}</code></pre>
+  </div>
+</div>
+
+<div class="page-nav">
+  <a href="java13.html">← Java 13</a>
+  <a href="java15.html">Java 15 →</a>
+</div>
+</main>
+</div>
+<footer>Student Portal · Java 21 + Spring Boot 3.3.12</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+<script>
+const links=document.querySelectorAll('.sidebar-link'),topics=document.querySelectorAll('.topic');
+const obs=new IntersectionObserver(e=>{e.forEach(en=>{if(en.isIntersecting){links.forEach(l=>l.classList.remove('active'));const a=document.querySelector(`.sidebar-link[href="#${en.target.id}"]`);if(a)a.classList.add('active');}});},{rootMargin:'-49px 0px -60% 0px'});
+topics.forEach(t=>obs.observe(t));
+</script>
+</body>
+</html>

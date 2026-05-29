@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Java 9 Tutorial — Student Portal</title>
+<link rel="stylesheet" href="gh.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css"/>
+</head>
+<body>
+<header class="gh-header">
+  <div class="gh-logo"><svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>Student Portal</div>
+  <span class="gh-breadcrumb"><a href="../index.html">tutorials</a> / <a href="index.html">java21</a> / <span>java9</span></span>
+</header>
+<div class="layout">
+<nav class="sidebar">
+  <div class="sidebar-nav-header"><a href="index.html">← All Java Versions</a></div>
+  <div class="sidebar-section">Java 9 Topics</div>
+  <a class="sidebar-link" href="#jpms">Module System (JPMS)</a>
+  <a class="sidebar-link" href="#jshell">JShell REPL</a>
+  <a class="sidebar-link" href="#collections">Collection Factories</a>
+  <a class="sidebar-link" href="#stream-updates">Stream API Updates</a>
+  <a class="sidebar-link" href="#optional-updates">Optional Updates</a>
+  <a class="sidebar-link" href="#private-interface">Private Interface Methods</a>
+  <a class="sidebar-link" href="#mrjar">Multi-Release JARs</a>
+  <div class="sidebar-section">Other Versions</div>
+  <div class="sidebar-versions">
+    <a class="ver-link" href="java8.html">Java 8 LTS</a>
+    <a class="ver-link current-ver" href="java9.html">Java 9</a>
+    <a class="ver-link" href="java10.html">Java 10</a>
+    <a class="ver-link" href="java11.html">Java 11 LTS</a>
+    <a class="ver-link" href="java12.html">Java 12</a>
+    <a class="ver-link" href="java13.html">Java 13</a>
+    <a class="ver-link" href="java14.html">Java 14</a>
+    <a class="ver-link" href="java15.html">Java 15</a>
+    <a class="ver-link" href="java16.html">Java 16</a>
+    <a class="ver-link" href="java17.html">Java 17 LTS</a>
+    <a class="ver-link" href="java18.html">Java 18</a>
+    <a class="ver-link" href="java19.html">Java 19</a>
+    <a class="ver-link" href="java20.html">Java 20</a>
+    <a class="ver-link" href="java21.html">Java 21 LTS ★</a>
+  </div>
+</nav>
+<main class="main">
+<div class="ver-header">
+  <div class="ver-meta"><span style="font-size:0.875rem;color:#57606a">Released September 2017</span></div>
+  <h1>Java 9 — Modules, JShell &amp; Stream Polish</h1>
+  <p>Introduced the Java Platform Module System (JPMS) — the biggest structural change since Java 1.0. Also added JShell, immutable collection factories, and useful Stream/Optional enhancements.</p>
+</div>
+
+<div class="topic" id="jpms">
+  <div class="topic-title">Module System (JPMS) <span class="jep">JEP 261</span></div>
+  <div class="not-in-project">Not directly used in this project. Spring Boot's auto-configuration and classpath scanning work on the unnamed module. JPMS is most relevant for SDK/library authors.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>The Java Platform Module System (Project Jigsaw) allows you to declare a module with explicit dependencies and exports. A <code>module-info.java</code> file at the root declares the module name, what it <code>requires</code>, what it <code>exports</code>, and what services it provides/uses. This enables strong encapsulation at the package level and reliable configuration.</p>
+  <div class="section-label"><span class="num">2</span> Examples</div>
+  <div class="examples">
+    <div class="example">
+      <div class="example-header"><span class="example-title">Declare a module</span><span class="ex-badge ex-simple">Simple</span></div>
+      <pre><code class="language-java">// module-info.java
+module com.studentresults.api {
+    requires java.base;           // implicit, shown for clarity
+    requires spring.web;
+    requires spring.data.jpa;
+    exports com.studentresults.dto;     // only dto package visible to others
+    exports com.studentresults.api;
+    // com.studentresults.service is NOT exported — internal only
+}</code></pre>
+    </div>
+    <div class="example">
+      <div class="example-header"><span class="example-title">Multi-module project</span><span class="ex-badge ex-medium">Medium</span></div>
+      <pre><code class="language-java">// module: com.studentresults.domain
+module com.studentresults.domain {
+    exports com.studentresults.domain;
+}
+
+// module: com.studentresults.service
+module com.studentresults.service {
+    requires com.studentresults.domain;  // can use domain classes
+    exports com.studentresults.service;
+}
+
+// module: com.studentresults.web
+module com.studentresults.web {
+    requires com.studentresults.service;  // can use service, transitively domain
+    requires java.net.http;
+}</code></pre>
+    </div>
+  </div>
+</div>
+
+<div class="topic" id="jshell">
+  <div class="topic-title">JShell REPL</div>
+  <div class="not-in-project">Not used in this project's source code. JShell is a developer tool — use it to quickly test Java 21 expressions without creating a class.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>JShell is Java's first official REPL (Read-Eval-Print Loop). Run <code>jshell</code> from your terminal to interactively evaluate Java expressions, statements, and declarations without boilerplate. Supports tab completion, <code>/list</code>, <code>/edit</code>, <code>/save</code>, and <code>/open</code> commands. Extremely useful for learning and prototyping.</p>
+  <div class="section-label"><span class="num">2</span> Examples</div>
+  <div class="examples">
+    <div class="example">
+      <div class="example-header"><span class="example-title">Interactive session</span><span class="ex-badge ex-simple">Simple</span></div>
+      <pre><code class="language-java">$ jshell
+jshell> int score = 78
+score ==> 78
+
+jshell> String grade = score >= 75 ? "A" : score >= 50 ? "B" : "C"
+grade ==> "B"
+
+jshell> List.of(1,2,3).stream().mapToInt(i->i).sum()
+$3 ==> 6
+
+jshell> /exit</code></pre>
+    </div>
+  </div>
+</div>
+
+<div class="topic" id="collections">
+  <div class="topic-title">Collection Factory Methods</div>
+  <div class="in-project-note">Used in this project — <code>List.of("MATHS","SCIENCE","ENGLISH")</code> subject config, <code>Set.of</code> for valid grades.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p><code>List.of()</code>, <code>Set.of()</code>, <code>Map.of()</code>, <code>Map.entry()</code> create compact, <strong>immutable</strong> collections in a single expression. They throw <code>UnsupportedOperationException</code> on mutation, <code>NullPointerException</code> on null elements, and <code>IllegalArgumentException</code> on duplicate set/map keys. Ideal for constants and config values.</p>
+  <div class="section-label"><span class="num">2</span> Examples</div>
+  <div class="examples">
+    <div class="example">
+      <div class="example-header"><span class="example-title">Immutable lists and maps</span><span class="ex-badge ex-simple">Simple</span></div>
+      <pre><code class="language-java">// Java 8 — mutable + extra step to make unmodifiable
+List&lt;String&gt; old = new ArrayList&lt;&gt;(Arrays.asList("A","B","C"));
+List&lt;String&gt; immutable = Collections.unmodifiableList(old);
+
+// Java 9 — one line, truly immutable
+List&lt;String&gt; subjects = List.of("MATHS", "SCIENCE", "ENGLISH");
+Set&lt;String&gt; grades    = Set.of("A", "B", "C", "F");
+Map&lt;String,Integer&gt; thresholds = Map.of("A",75, "B",50, "C",35);
+
+subjects.add("PE");  // throws UnsupportedOperationException</code></pre>
+    </div>
+    <div class="example">
+      <div class="example-header"><span class="example-title">Map.ofEntries for larger maps</span><span class="ex-badge ex-medium">Medium</span></div>
+      <pre><code class="language-java">// Map.of supports max 10 pairs; use Map.ofEntries for more
+Map&lt;String, String&gt; errorMessages = Map.ofEntries(
+    Map.entry("STUDENT_NOT_FOUND",  "Student does not exist"),
+    Map.entry("MARK_NOT_FOUND",     "Mark record does not exist"),
+    Map.entry("DUPLICATE_ROLL",     "Roll number already registered"),
+    Map.entry("INVALID_SCORE",      "Score must be between 0 and 100"),
+    Map.entry("ACCESS_DENIED",      "You do not have permission")
+);</code></pre>
+    </div>
+  </div>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">config/DevDataSeeder.java</div>
+    <pre><code class="language-java">private static final List&lt;String&gt; SUBJECT_NAMES =
+    List.of("MATHS", "SCIENCE", "ENGLISH");
+
+@Override
+public void run(ApplicationArguments args) {
+    SUBJECT_NAMES.forEach(name -> {
+        if (!subjectRepository.existsByName(name))
+            subjectRepository.save(new Subject(name));
+    });
+}
+
+private static final Set&lt;String&gt; VALID_GRADES = Set.of("A", "B", "C", "F");</code></pre>
+  </div>
+</div>
+
+<div class="topic" id="stream-updates">
+  <div class="topic-title">Stream API Updates — takeWhile, dropWhile, ofNullable, iterate</div>
+  <div class="in-project-note">Used in this project — <code>takeWhile</code> for top results until grade drops, <code>ofNullable</code> for nullable filter params.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p><code>takeWhile(predicate)</code> takes elements while the condition is true, then stops — unlike <code>filter</code> which continues through all elements. <code>dropWhile(predicate)</code> drops elements while true, then takes the rest. <code>Stream.ofNullable(value)</code> produces a 0-or-1 element stream from a nullable value. <code>Stream.iterate(seed, hasNext, next)</code> provides a finite iterate (unlike Java 8's infinite version).</p>
+  <div class="section-label"><span class="num">2</span> Examples</div>
+  <div class="examples">
+    <div class="example">
+      <div class="example-header"><span class="example-title">takeWhile and dropWhile</span><span class="ex-badge ex-simple">Simple</span></div>
+      <pre><code class="language-java">List&lt;Integer&gt; scores = List.of(95, 88, 72, 61, 48, 35, 20);
+
+// Take while >= 50 (stops at 48)
+List&lt;Integer&gt; passing = scores.stream()
+    .takeWhile(s -> s >= 50)
+    .collect(Collectors.toList());
+// [95, 88, 72, 61]
+
+// Drop while >= 50 (keeps from 48 onwards)
+List&lt;Integer&gt; failing = scores.stream()
+    .dropWhile(s -> s >= 50)
+    .collect(Collectors.toList());
+// [48, 35, 20]</code></pre>
+    </div>
+    <div class="example">
+      <div class="example-header"><span class="example-title">Stream.ofNullable + iterate</span><span class="ex-badge ex-medium">Medium</span></div>
+      <pre><code class="language-java">// ofNullable — bridge nullable param into stream
+String filter = getNameFilter();  // might be null
+Stream.ofNullable(filter)
+    .flatMap(f -> repo.findByNameContaining(f).stream())
+    .map(this::toDTO)
+    .forEach(results::add);
+
+// iterate with hasNext (Java 9) — finite sequence
+Stream.iterate(1, n -> n &lt;= 100, n -> n + 1)
+    .filter(n -> n % 3 == 0)
+    .forEach(System.out::println); // 3,6,9...99</code></pre>
+    </div>
+  </div>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">service/impl/ResultServiceImpl.java</div>
+    <pre><code class="language-java">// Top results until grade drops below B
+List&lt;Mark&gt; topMarks = marks.stream()
+    .sorted(Comparator.comparingInt(Mark::getScore).reversed())
+    .takeWhile(m -> m.getScore() >= 50)
+    .collect(Collectors.toList());
+
+// Nullable search filter
+public List&lt;StudentDTO&gt; search(String nameFilter) {
+    return Stream.ofNullable(nameFilter)
+        .flatMap(f -> studentRepository.findByNameContaining(f).stream())
+        .map(this::toDTO)
+        .collect(Collectors.toList());
+}</code></pre>
+  </div>
+</div>
+
+<div class="topic" id="optional-updates">
+  <div class="topic-title">Optional Updates — or(), ifPresentOrElse(), stream()</div>
+  <div class="in-project-note">Used in this project — <code>or()</code> for fallback lookup by roll number then email.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p><code>Optional.or(Supplier&lt;Optional&gt;)</code> returns this Optional if present, else calls the supplier for a fallback Optional — enabling Optional chaining. <code>ifPresentOrElse(consumer, runnable)</code> handles both cases inline. <code>Optional.stream()</code> converts to a 0-or-1 Stream, useful for <code>flatMap</code> in stream pipelines.</p>
+  <div class="section-label"><span class="num">2</span> Examples</div>
+  <div class="examples">
+    <div class="example">
+      <div class="example-header"><span class="example-title">or() chaining</span><span class="ex-badge ex-simple">Simple</span></div>
+      <pre><code class="language-java">// Find by primary key, fall back to username, fall back to email
+Optional&lt;User&gt; user = userRepo.findById(id)
+    .or(() -> userRepo.findByUsername(username))
+    .or(() -> userRepo.findByEmail(email));
+
+user.ifPresentOrElse(
+    u -> log.info("Found: {}", u.getUsername()),
+    () -> log.warn("User not found for any identifier")
+);</code></pre>
+    </div>
+    <div class="example">
+      <div class="example-header"><span class="example-title">Optional.stream() in pipeline</span><span class="ex-badge ex-medium">Medium</span></div>
+      <pre><code class="language-java">// Flatten a list of Optionals into present values
+List&lt;Optional&lt;StudentDTO&gt;&gt; maybes = ids.stream()
+    .map(id -> studentRepo.findById(id).map(this::toDTO))
+    .collect(Collectors.toList());
+
+List&lt;StudentDTO&gt; found = maybes.stream()
+    .flatMap(Optional::stream)  // Java 9 — drop empties
+    .collect(Collectors.toList());</code></pre>
+    </div>
+  </div>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">service/impl/StudentServiceImpl.java</div>
+    <pre><code class="language-java">public StudentDTO findStudent(String rollNumber, String email) {
+    return studentRepository.findByRollNumber(rollNumber)
+        .or(() -> studentRepository.findByEmail(email))
+        .map(this::toDTO)
+        .orElseThrow(() -> new StudentNotFoundException("Not found"));
+}
+
+studentRepository.findById(id)
+    .ifPresentOrElse(
+        s -> log.info("Student found: {}", s.getName()),
+        () -> log.warn("Student {} not found in lookup", id)
+    );</code></pre>
+  </div>
+</div>
+
+<div class="topic" id="private-interface">
+  <div class="topic-title">Private Interface Methods</div>
+  <div class="in-project-note">Used in this project — shared validation logic inside validator interfaces.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>Interfaces can now have <code>private</code> and <code>private static</code> methods to share implementation between default methods without exposing that logic as part of the contract. Prevents code duplication inside interfaces that have multiple related default methods.</p>
+  <div class="section-label"><span class="num">2</span> Examples</div>
+  <div class="examples">
+    <div class="example">
+      <div class="example-header"><span class="example-title">Shared logic via private method</span><span class="ex-badge ex-simple">Simple</span></div>
+      <pre><code class="language-java">interface Validator&lt;T&gt; {
+    boolean isValid(T value);
+
+    default boolean isValidAndNotNull(T value) {
+        return value != null && isValid(value);  // calls private helper
+    }
+    default String validationMessage(T value) {
+        return isValidAndNotNull(value) ? "OK" : buildMessage(value);
+    }
+
+    private String buildMessage(T value) {   // private — shared, not exposed
+        return "Validation failed for: " + value;
+    }
+}</code></pre>
+    </div>
+  </div>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">validation/ResultValidator.java (interface concept)</div>
+    <pre><code class="language-java">public interface ResultValidator {
+    default boolean isValidMark(int score) {
+        return isInRange(score);
+    }
+    default boolean isValidGrade(String grade) {
+        return grade != null && isKnownGrade(grade);
+    }
+    private boolean isInRange(int score) {   // private shared helper
+        return score >= 0 && score &lt;= 100;
+    }
+    private boolean isKnownGrade(String grade) {
+        return Set.of("A","B","C","F").contains(grade);
+    }
+}</code></pre>
+  </div>
+</div>
+
+<div class="topic" id="mrjar">
+  <div class="topic-title">Multi-Release JARs</div>
+  <div class="not-in-project">Not used in this project. Multi-Release JARs are for library authors who want to ship one JAR that uses newer APIs when available, falling back to older implementations on older JVMs.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>A Multi-Release JAR (MR-JAR) contains version-specific class files under <code>META-INF/versions/N/</code>. When running on Java N or later, the JVM uses those classes instead of the root ones. This allows a library to use Java 11 <code>HttpClient</code> when available, falling back to Java 8 <code>HttpURLConnection</code> on older JVMs — all in one JAR.</p>
+  <div class="section-label"><span class="num">2</span> Examples</div>
+  <div class="examples">
+    <div class="example">
+      <div class="example-header"><span class="example-title">MR-JAR structure</span><span class="ex-badge ex-simple">Simple</span></div>
+      <pre><code class="language-java">// JAR structure:
+// com/example/HttpHelper.class         &lt;-- Java 8 implementation
+// META-INF/versions/11/
+//   com/example/HttpHelper.class       &lt;-- Java 11 implementation (HttpClient)
+// META-INF/MANIFEST.MF:
+//   Multi-Release: true
+
+// Java 8 JVM uses root HttpHelper (URLConnection)
+// Java 11+ JVM uses META-INF/versions/11/ HttpHelper (HttpClient)</code></pre>
+    </div>
+  </div>
+</div>
+
+<div class="page-nav">
+  <a href="java8.html">← Java 8</a>
+  <a href="java10.html">Java 10 →</a>
+</div>
+</main>
+</div>
+<footer>Student Portal · Java 21 + Spring Boot 3.3.12</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+<script>
+const links=document.querySelectorAll('.sidebar-link');
+const topics=document.querySelectorAll('.topic');
+const obs=new IntersectionObserver(e=>{e.forEach(entry=>{if(entry.isIntersecting){links.forEach(l=>l.classList.remove('active'));const a=document.querySelector(`.sidebar-link[href="#${entry.target.id}"]`);if(a){a.classList.add('active');a.scrollIntoView({block:'nearest'}); }}});},{rootMargin:'-49px 0px -60% 0px'});
+topics.forEach(t=>obs.observe(t));
+</script>
+</body>
+</html>

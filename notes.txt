@@ -31,75 +31,57 @@ Docs UI should have home page at docs/tutorials
 
  possible ? tell me first , give me how you will implement ?
 
-Yes, fully possible. Here's exactly how I'll implement it:
 
----
+ | Java Version | Features                                                                                                                                                    |
 
-**Structure**
+ | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
 
-```
-docs/
-└── tutorials/
-    ├── index.html                  ← Home page (links to all 3 sections)
-    ├── java21/
-    │   └── index.html              ← Java 21 tutorial (all versions)
-    ├── springboot/
-    │   └── index.html              ← Spring Boot tutorial
-    └── react-nextjs/
-        └── index.html              ← React/Next.js tutorial
-```
+ | Java 8       | Lambda Expressions, Stream API, Functional Interfaces, Default Methods, Optional, Date & Time API, CompletableFuture, Nashorn Engine                        |
 
-Each file is a **single self-contained HTML file** — no build tools, no npm, no server needed. Just open in browser.
+ | Java 9       | Module System (JPMS), JShell, Collection Factory Methods, Stream API Updates, Private Interface Methods, Multi-Release JARs                                 |
 
----
+ | Java 10      | `var` Type Inference, Application CDS, Garbage Collector Improvements                                                                                       |
 
-**Each tutorial page layout**
+ | Java 11      | HTTP Client API, String API Enhancements, `var` in Lambda, Single File Execution, TLS 1.3, Flight Recorder                                                  |
 
-```
-┌─────────────────────────────────────────────────────────┐
-│  Header: "Student Portal — Tutorials"                   │
-├──────────────────┬──────────────────────────────────────┤
-│  LEFT SIDEBAR    │  RIGHT CONTENT                       │
-│                  │                                      │
-│  Java 8          │  ## Java 8                           │
-│  ├ Lambdas       │  ### High Level Overview             │
-│  ├ Streams       │  ...                                 │
-│  ├ Optional      │  ### Examples                        │
-│  └ ...           │  Simple / Medium / Real-time         │
-│                  │  ### In This Project                 │
-│  Java 9          │  ```java code snippet```             │
-│  Java 10         │                                      │
-│  Java 11         │                                      │
-│  ...             │                                      │
-│  Java 21         │                                      │
-└──────────────────┴──────────────────────────────────────┘
-```
+ | Java 12      | Switch Expressions (Preview), Shenandoah GC, JVM Constants API                                                                                              |
 
----
+ | Java 13      | Text Blocks (Preview), Dynamic CDS Archives                                                                                                                 |
 
-**Tech inside each HTML file**
-- **Tailwind CSS** (CDN) — styling
-- **Prism.js** (CDN) — syntax highlighting for Java code
-- **Vanilla JS** — sidebar click → scroll to section, active highlight, search filter
-- **No backend, no build** — pure static files, open directly or serve via any HTTP server
+ | Java 14      | Records (Preview), Pattern Matching for `instanceof` (Preview), Helpful NullPointerExceptions, Switch Expressions                                           |
 
----
+ | Java 15      | Text Blocks, Sealed Classes (Preview), Hidden Classes, ZGC Improvements                                                                                     |
 
-**Content coverage for `java21/index.html`**
+ | Java 16      | Records, Pattern Matching for `instanceof`, Vector API, Unix-Domain Socket Channels                                                                         |
 
-Every version from the project plan covered in order:
-Java 8 → 9 → 10 → 11 → 12-13 → 14-15 → 16-17 → 18-20 → 21
+ | Java 17      | Sealed Classes, Strong Encapsulation, Pattern Matching Enhancements, Foreign Function API                                                                   |
 
-Each topic has exactly the 3 things you asked:
-1. High level overview
-2. Simple + Medium + Real-time example
-3. How used in **this project** with code snippet
+ | Java 18      | Simple Web Server, UTF-8 by Default, JavaDoc Code Snippets                                                                                                  |
 
----
+ | Java 19      | Virtual Threads (Preview), Structured Concurrency (Incubator), Record Patterns (Preview), Foreign Function & Memory API                                     |
 
-**Shall I start building `java21/index.html` first?**
+ | Java 20      | Scoped Values (Incubator), Record Pattern Enhancements, Virtual Thread Updates                                                                              |
 
-It'll be one complete file with all Java versions. Once you approve the approach I'll write it directly into your project via IntelliJ.
+ | Java 21      | Virtual Threads, Record Patterns, Pattern Matching for Switch, Sequenced Collections, String Templates (Preview), Scoped Values (Preview), Generational ZGC |
+
+
+
+
+
+ many features are missed , can you include all evnethough not fit in this project, just add example,
+
+ mention wont fit in this project
+
+
+Each page has the same GitHub light layout — left sidebar with all topics for that version, right content with all 3 sections per feature. Let me build them all now.
+
+ why you are creating single index, you can create seprate file for each version right
+
+
+
+
+
+
 
 
 

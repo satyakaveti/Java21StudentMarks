@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Student Portal — Tutorials</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  color: #24292f;
+  background: #ffffff;
+}
+a { color: #0969da; text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* HEADER */
+.gh-header {
+  background: #24292f;
+  padding: 12px 32px;
+  display: flex; align-items: center; gap: 16px;
+  border-bottom: 1px solid #30363d;
+}
+.gh-logo { color: #fff; font-size: 1rem; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.gh-logo svg { fill: #fff; width: 32px; height: 32px; }
+.gh-breadcrumb { color: #8b949e; font-size: 0.875rem; }
+.gh-breadcrumb a { color: #cdd9e5; }
+.gh-breadcrumb a:hover { color: #fff; text-decoration: none; }
+
+/* HERO */
+.hero {
+  background: #f6f8fa;
+  border-bottom: 1px solid #d0d7de;
+  padding: 48px 32px;
+  text-align: center;
+}
+.hero h1 { font-size: 2rem; font-weight: 600; color: #24292f; margin-bottom: 12px; }
+.hero p { font-size: 1rem; color: #57606a; max-width: 600px; margin: 0 auto; }
+
+/* MAIN */
+.container { max-width: 1012px; margin: 0 auto; padding: 32px; }
+
+/* CARDS GRID */
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-top: 24px; }
+.card {
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  padding: 24px;
+  background: #fff;
+  text-decoration: none;
+  color: #24292f;
+  display: block;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.card:hover {
+  border-color: #0969da;
+  box-shadow: 0 1px 3px rgba(9,105,218,0.12);
+  text-decoration: none;
+}
+.card-icon { font-size: 2rem; margin-bottom: 12px; }
+.card-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #57606a;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+}
+.card h2 { font-size: 1.125rem; font-weight: 600; color: #0969da; margin-bottom: 8px; }
+.card p { font-size: 0.875rem; color: #57606a; line-height: 1.6; }
+.card-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 16px; }
+.tag {
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 2em;
+  background: #ddf4ff;
+  color: #0969da;
+  border: 1px solid #54aeff66;
+}
+.card:nth-child(2) .tag { background: #dafbe1; color: #1a7f37; border-color: #4ac26b66; }
+.card:nth-child(3) .tag { background: #fff8c5; color: #9a6700; border-color: #d4a72c66; }
+.card-arrow { margin-top: 16px; font-size: 0.875rem; color: #0969da; font-weight: 500; }
+
+/* SECTION HEADER */
+.section-header { margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #d0d7de; }
+.section-header h2 { font-size: 1.25rem; font-weight: 600; color: #24292f; }
+
+/* FOOTER */
+footer {
+  margin-top: 48px;
+  padding: 24px 32px;
+  border-top: 1px solid #d0d7de;
+  background: #f6f8fa;
+  text-align: center;
+  font-size: 0.8rem;
+  color: #57606a;
+}
+</style>
+</head>
+<body>
+
+<header class="gh-header">
+  <div class="gh-logo">
+    <svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+      <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38
+               0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13
+               -.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66
+               .07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15
+               -.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27
+               .68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12
+               .51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48
+               0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+    </svg>
+    Student Portal
+  </div>
+  <span class="gh-breadcrumb">
+    <a href="index.html">docs</a> / <a href="index.html">tutorials</a>
+  </span>
+</header>
+
+<div class="hero">
+  <h1>📚 Student Portal — Tutorials</h1>
+  <p>In-depth tutorials covering every technology in the Student Portal project — Java 21, Spring Boot, and React/Next.js.</p>
+</div>
+
+<div class="container">
+  <div class="section-header">
+    <h2>Choose a tutorial track</h2>
+  </div>
+
+  <div class="cards">
+    <a class="card" href="java21/index.html">
+      <div class="card-icon">☕</div>
+      <div class="card-label">01 · Language</div>
+      <h2>Java 21</h2>
+      <p>Full evolution from Java 8 → 21 LTS. Lambdas, Streams, Records, Sealed Classes, Virtual Threads, Pattern Matching — every feature used in this project.</p>
+      <div class="card-tags">
+        <span class="tag">Java 8</span>
+        <span class="tag">Java 11 LTS</span>
+        <span class="tag">Java 17 LTS</span>
+        <span class="tag">Java 21 LTS</span>
+        <span class="tag">Virtual Threads</span>
+        <span class="tag">Records</span>
+        <span class="tag">Sealed Classes</span>
+      </div>
+      <div class="card-arrow">Start reading →</div>
+    </a>
+
+    <a class="card" href="springboot/index.html">
+      <div class="card-icon">🌱</div>
+      <div class="card-label">02 · Framework</div>
+      <h2>Spring Boot</h2>
+      <p>Spring Boot 2.5 → 3.3 evolution. MVC, Security 6, JPA, AOP, Redis Cache, Events, Scheduling, Actuator, Testcontainers — every module used in this project.</p>
+      <div class="card-tags">
+        <span class="tag">Security 6</span>
+        <span class="tag">Data JPA</span>
+        <span class="tag">AOP</span>
+        <span class="tag">Redis Cache</span>
+        <span class="tag">Actuator</span>
+        <span class="tag">Testcontainers</span>
+      </div>
+      <div class="card-arrow">Start reading →</div>
+    </a>
+
+    <a class="card" href="react-nextjs/index.html">
+      <div class="card-icon">⚛️</div>
+      <div class="card-label">03 · Frontend</div>
+      <h2>React + Next.js</h2>
+      <p>React 18 and Next.js 14 App Router. Components, hooks, server components, JWT auth, SSE live notifications, and Tailwind CSS.</p>
+      <div class="card-tags">
+        <span class="tag">React 18</span>
+        <span class="tag">Next.js 14</span>
+        <span class="tag">App Router</span>
+        <span class="tag">Tailwind CSS</span>
+        <span class="tag">SSE</span>
+        <span class="tag">NextAuth</span>
+      </div>
+      <div class="card-arrow">Start reading →</div>
+    </a>
+  </div>
+</div>
+
+<footer>
+  Student Portal · Java 21 + Spring Boot 3.3.12 + Next.js 14
+</footer>
+
+</body>
+</html>

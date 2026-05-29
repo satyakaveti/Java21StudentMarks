@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Java 15 Tutorial — Student Portal</title>
+<link rel="stylesheet" href="gh.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css"/>
+</head>
+<body>
+<header class="gh-header">
+  <div class="gh-logo"><svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>Student Portal</div>
+  <span class="gh-breadcrumb"><a href="../index.html">tutorials</a> / <a href="index.html">java21</a> / <span>java15</span></span>
+</header>
+<div class="layout">
+<nav class="sidebar">
+  <div class="sidebar-nav-header"><a href="index.html">← All Java Versions</a></div>
+  <div class="sidebar-section">Java 15 Topics</div>
+  <a class="sidebar-link" href="#textblocks-std">Text Blocks (Standard)</a>
+  <a class="sidebar-link" href="#sealed-preview">Sealed Classes (Preview)</a>
+  <a class="sidebar-link" href="#hidden-classes">Hidden Classes</a>
+  <a class="sidebar-link" href="#zgc">ZGC Improvements</a>
+  <div class="sidebar-section">Other Versions</div>
+  <div class="sidebar-versions">
+    <a class="ver-link" href="java8.html">Java 8 LTS</a>
+    <a class="ver-link" href="java9.html">Java 9</a>
+    <a class="ver-link" href="java10.html">Java 10</a>
+    <a class="ver-link" href="java11.html">Java 11 LTS</a>
+    <a class="ver-link" href="java12.html">Java 12</a>
+    <a class="ver-link" href="java13.html">Java 13</a>
+    <a class="ver-link" href="java14.html">Java 14</a>
+    <a class="ver-link current-ver" href="java15.html">Java 15</a>
+    <a class="ver-link" href="java16.html">Java 16</a>
+    <a class="ver-link" href="java17.html">Java 17 LTS</a>
+    <a class="ver-link" href="java18.html">Java 18</a>
+    <a class="ver-link" href="java19.html">Java 19</a>
+    <a class="ver-link" href="java20.html">Java 20</a>
+    <a class="ver-link" href="java21.html">Java 21 LTS ★</a>
+  </div>
+</nav>
+<main class="main">
+<div class="ver-header">
+  <div class="ver-meta"><span style="font-size:0.875rem;color:#57606a">Released September 2020</span></div>
+  <h1>Java 15 — Text Blocks Standard &amp; Sealed Classes Preview</h1>
+  <p>Text blocks became stable (no preview flag). Sealed classes entered preview, introducing controlled type hierarchies that unlock exhaustive pattern matching.</p>
+</div>
+
+<div class="topic" id="textblocks-std">
+  <div class="topic-title">Text Blocks — Standard <span class="jep">JEP 378</span></div>
+  <div class="in-project-note">Used in this project — all SQL queries and email templates use text blocks without <code>--enable-preview</code>.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>Text blocks graduate from preview (Java 13–14) to standard in Java 15. No more <code>--enable-preview</code> flag needed. They are now a permanent part of the language. The <code>\</code> line continuation and <code>\s</code> trailing space preservation (added in Java 14 second preview) are also standard.</p>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">repository/MarkRepository.java — standard text block query</div>
+    <pre><code class="language-java">@Query("""
+    SELECT m FROM Mark m
+    JOIN FETCH m.student s
+    JOIN FETCH m.subject sub
+    WHERE s.id = :studentId AND s.deleted = false
+    ORDER BY sub.name ASC
+    """)
+List&lt;Mark&gt; findAllByStudentId(@Param("studentId") Long studentId);
+
+@Query(value = """
+    SELECT s.name, AVG(m.score) as avg_score
+    FROM marks m
+    JOIN subjects s ON m.subject_id = s.id
+    WHERE m.student_id = :studentId
+    GROUP BY s.name
+    """, nativeQuery = true)
+List&lt;Object[]&gt; avgScoreBySubject(@Param("studentId") Long studentId);</code></pre>
+  </div>
+</div>
+
+<div class="topic" id="sealed-preview">
+  <div class="topic-title">Sealed Classes <span class="jep">JEP 360 — Preview → Standard in Java 17</span></div>
+  <div class="in-project-note">Used in this project — <code>ServiceResult</code> sealed interface with <code>Success</code>, <code>NotFound</code>, <code>Forbidden</code>, <code>ValidationError</code> subtypes.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>Sealed classes (<code>sealed</code> keyword + <code>permits</code> clause) restrict which classes can extend or implement them. Each permitted subtype must be <code>final</code>, <code>sealed</code>, or <code>non-sealed</code>. This creates a <em>closed type hierarchy</em> — the compiler knows all possible subtypes, enabling exhaustive switch expressions with no default case needed. Perfect for result types, AST nodes, and event hierarchies.</p>
+  <div class="section-label"><span class="num">2</span> Examples</div>
+  <div class="examples">
+    <div class="example">
+      <div class="example-header"><span class="example-title">Basic sealed hierarchy</span><span class="ex-badge ex-simple">Simple</span></div>
+      <pre><code class="language-java">// Sealed interface — only these 3 can implement it
+sealed interface Shape permits Circle, Rectangle, Triangle {}
+
+final class Circle    implements Shape { double radius; }
+final class Rectangle implements Shape { double width, height; }
+final class Triangle  implements Shape { double base, height; }
+
+// Compiler enforces exhaustiveness in switch
+double area = switch (shape) {
+    case Circle c    -> Math.PI * c.radius * c.radius;
+    case Rectangle r -> r.width * r.height;
+    case Triangle t  -> 0.5 * t.base * t.height;
+    // No default needed — all cases covered!
+};</code></pre>
+    </div>
+    <div class="example">
+      <div class="example-header"><span class="example-title">Sealed + Records for result type</span><span class="ex-badge ex-medium">Medium</span></div>
+      <pre><code class="language-java">// Sealed interface with record subtypes
+sealed interface ServiceResult&lt;T&gt;
+    permits ServiceResult.Success, ServiceResult.NotFound,
+            ServiceResult.Forbidden, ServiceResult.ValidationError {
+
+    record Success&lt;T&gt;(T value)            implements ServiceResult&lt;T&gt; {}
+    record NotFound&lt;T&gt;(String message)    implements ServiceResult&lt;T&gt; {}
+    record Forbidden&lt;T&gt;(String message)   implements ServiceResult&lt;T&gt; {}
+    record ValidationError&lt;T&gt;(String msg) implements ServiceResult&lt;T&gt; {}
+}
+
+// Exhaustive switch — no default
+return switch (result) {
+    case ServiceResult.Success(var v)         -> ResponseEntity.ok(v);
+    case ServiceResult.NotFound(var msg)      -> ResponseEntity.notFound().build();
+    case ServiceResult.Forbidden(var msg)     -> ResponseEntity.status(403).build();
+    case ServiceResult.ValidationError(var m) -> ResponseEntity.badRequest().build();
+};</code></pre>
+    </div>
+  </div>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">dto/ServiceResult.java</div>
+    <pre><code class="language-java">public sealed interface ServiceResult&lt;T&gt;
+    permits ServiceResult.Success, ServiceResult.NotFound,
+            ServiceResult.Forbidden, ServiceResult.ValidationError {
+
+    record Success&lt;T&gt;(T value)            implements ServiceResult&lt;T&gt; {}
+    record NotFound&lt;T&gt;(String message)    implements ServiceResult&lt;T&gt; {}
+    record Forbidden&lt;T&gt;(String message)   implements ServiceResult&lt;T&gt; {}
+    record ValidationError&lt;T&gt;(String msg) implements ServiceResult&lt;T&gt; {}
+
+    static &lt;T&gt; ServiceResult&lt;T&gt; success(T value)         { return new Success&lt;&gt;(value); }
+    static &lt;T&gt; ServiceResult&lt;T&gt; notFound(String msg)     { return new NotFound&lt;&gt;(msg); }
+    static &lt;T&gt; ServiceResult&lt;T&gt; forbidden(String msg)    { return new Forbidden&lt;&gt;(msg); }
+    static &lt;T&gt; ServiceResult&lt;T&gt; validationError(String m){ return new ValidationError&lt;&gt;(m); }
+}</code></pre>
+  </div>
+</div>
+
+<div class="topic" id="hidden-classes">
+  <div class="topic-title">Hidden Classes <span class="jep">JEP 371</span></div>
+  <div class="not-in-project">Not used in application code. Used internally by frameworks like Spring (proxy generation) and lambda implementations.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>Hidden classes are classes that cannot be used directly by bytecode of other classes and are intended for use by frameworks that generate classes at runtime. They replace unsafe use of <code>Unsafe.defineAnonymousClass()</code>. Hidden classes are not discoverable, can be unloaded independently of their classloader, and are used by Spring's CGLIB proxy generation and the JVM's lambda implementation.</p>
+  <div class="section-label"><span class="num">2</span> Examples</div>
+  <div class="examples">
+    <div class="example">
+      <div class="example-header"><span class="example-title">Define a hidden class (framework use)</span><span class="ex-badge ex-simple">Simple</span></div>
+      <pre><code class="language-java">// Framework code — not application code
+byte[] classBytes = generateProxyBytecode();  // generate via ASM or similar
+
+Lookup lookup = MethodHandles.lookup();
+Lookup hiddenLookup = lookup.defineHiddenClass(
+    classBytes,
+    true,  // initialize immediately
+    MethodHandles.Lookup.ClassOption.NESTMATE
+);
+
+Class&lt;?&gt; hiddenClass = hiddenLookup.lookupClass();
+// Cannot be referenced by name — only via the Lookup
+// Used by Spring CGLIB, Hibernate proxy generation, lambdas</code></pre>
+    </div>
+  </div>
+</div>
+
+<div class="topic" id="zgc">
+  <div class="topic-title">ZGC — Production Ready</div>
+  <div class="not-in-project">ZGC was experimental in Java 11–14, production-ready in Java 15. This project uses Generational ZGC (Java 21) which is an evolution of this.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>ZGC (Z Garbage Collector) became production-ready in Java 15 (JEP 377). It provides sub-millisecond GC pauses, performs all expensive work concurrently, and scales from MB to TB heaps. In Java 21, Generational ZGC added young/old generation collection, making it significantly more throughput-efficient for typical server applications.</p>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">pom.xml — Generational ZGC (Java 21 evolution)</div>
+    <pre><code class="language-xml">&lt;plugin&gt;
+  &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+  &lt;artifactId&gt;spring-boot-maven-plugin&lt;/artifactId&gt;
+  &lt;configuration&gt;
+    &lt;jvmArguments&gt;
+      -XX:+UseZGC -XX:+ZGenerational
+      -Xms512m -Xmx2g
+    &lt;/jvmArguments&gt;
+  &lt;/configuration&gt;
+&lt;/plugin&gt;</code></pre>
+  </div>
+</div>
+
+<div class="page-nav">
+  <a href="java14.html">← Java 14</a>
+  <a href="java16.html">Java 16 →</a>
+</div>
+</main>
+</div>
+<footer>Student Portal · Java 21 + Spring Boot 3.3.12</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+<script>
+const links=document.querySelectorAll('.sidebar-link'),topics=document.querySelectorAll('.topic');
+const obs=new IntersectionObserver(e=>{e.forEach(en=>{if(en.isIntersecting){links.forEach(l=>l.classList.remove('active'));const a=document.querySelector(`.sidebar-link[href="#${en.target.id}"]`);if(a)a.classList.add('active');}});},{rootMargin:'-49px 0px -60% 0px'});
+topics.forEach(t=>obs.observe(t));
+</script>
+</body>
+</html>

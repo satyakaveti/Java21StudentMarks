@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Java 13 Tutorial — Student Portal</title>
+<link rel="stylesheet" href="gh.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css"/>
+</head>
+<body>
+<header class="gh-header">
+  <div class="gh-logo"><svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>Student Portal</div>
+  <span class="gh-breadcrumb"><a href="../index.html">tutorials</a> / <a href="index.html">java21</a> / <span>java13</span></span>
+</header>
+<div class="layout">
+<nav class="sidebar">
+  <div class="sidebar-nav-header"><a href="index.html">← All Java Versions</a></div>
+  <div class="sidebar-section">Java 13 Topics</div>
+  <a class="sidebar-link" href="#textblocks">Text Blocks (Preview)</a>
+  <a class="sidebar-link" href="#dynamic-cds">Dynamic CDS Archives</a>
+  <div class="sidebar-section">Other Versions</div>
+  <div class="sidebar-versions">
+    <a class="ver-link" href="java8.html">Java 8 LTS</a>
+    <a class="ver-link" href="java9.html">Java 9</a>
+    <a class="ver-link" href="java10.html">Java 10</a>
+    <a class="ver-link" href="java11.html">Java 11 LTS</a>
+    <a class="ver-link" href="java12.html">Java 12</a>
+    <a class="ver-link current-ver" href="java13.html">Java 13</a>
+    <a class="ver-link" href="java14.html">Java 14</a>
+    <a class="ver-link" href="java15.html">Java 15</a>
+    <a class="ver-link" href="java16.html">Java 16</a>
+    <a class="ver-link" href="java17.html">Java 17 LTS</a>
+    <a class="ver-link" href="java18.html">Java 18</a>
+    <a class="ver-link" href="java19.html">Java 19</a>
+    <a class="ver-link" href="java20.html">Java 20</a>
+    <a class="ver-link" href="java21.html">Java 21 LTS ★</a>
+  </div>
+</nav>
+<main class="main">
+<div class="ver-header">
+  <div class="ver-meta"><span class="badge badge-preview">Preview Features</span><span style="font-size:0.875rem;color:#57606a">Released September 2019</span></div>
+  <h1>Java 13 — Text Blocks &amp; Dynamic CDS</h1>
+  <p>Text Blocks entered preview in Java 13, making multi-line strings readable for the first time. They graduated to standard in Java 15.</p>
+</div>
+
+<div class="topic" id="textblocks">
+  <div class="topic-title">Text Blocks <span class="jep">JEP 355 — Preview</span></div>
+  <div class="in-project-note">Used in this project — SQL query constants in repositories, email templates in scheduler. Standard in Java 15.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>Text blocks are multi-line string literals using triple-quotes <code>"""..."""</code>. The compiler strips common leading whitespace automatically (incidental indentation). No need to escape inner double-quotes, newlines, or most special characters. The closing <code>"""</code> position controls indentation stripping. <code>\</code> at line end suppresses the newline. <code>\s</code> preserves trailing spaces.</p>
+  <div class="section-label"><span class="num">2</span> Examples</div>
+  <div class="examples">
+    <div class="example">
+      <div class="example-header"><span class="example-title">Multi-line SQL and JSON</span><span class="ex-badge ex-simple">Simple</span></div>
+      <pre><code class="language-java">// Old way — escape hell
+String sql = "SELECT m.score, s.name\n" +
+             "FROM marks m\n" +
+             "JOIN subjects s ON m.subject_id = s.id\n" +
+             "WHERE m.student_id = ?";
+
+// Text block — readable
+String sql = """
+    SELECT m.score, s.name
+    FROM marks m
+    JOIN subjects s ON m.subject_id = s.id
+    WHERE m.student_id = ?
+    """;
+
+// JSON text block
+String json = """
+    {
+        "studentId": 42,
+        "subject": "MATHS",
+        "score": 87
+    }
+    """;</code></pre>
+    </div>
+    <div class="example">
+      <div class="example-header"><span class="example-title">HTML email template</span><span class="ex-badge ex-medium">Medium</span></div>
+      <pre><code class="language-java">String emailHtml = """
+    &lt;html&gt;
+      &lt;body&gt;
+        &lt;h2&gt;Dear %s,&lt;/h2&gt;
+        &lt;p&gt;Your results for &lt;strong&gt;%s&lt;/strong&gt; are now available.&lt;/p&gt;
+        &lt;table&gt;
+          &lt;tr&gt;&lt;td&gt;Score&lt;/td&gt;&lt;td&gt;%d / 100&lt;/td&gt;&lt;/tr&gt;
+          &lt;tr&gt;&lt;td&gt;Grade&lt;/td&gt;&lt;td&gt;%s&lt;/td&gt;&lt;/tr&gt;
+          &lt;tr&gt;&lt;td&gt;Status&lt;/td&gt;&lt;td&gt;%s&lt;/td&gt;&lt;/tr&gt;
+        &lt;/table&gt;
+      &lt;/body&gt;
+    &lt;/html&gt;
+    """.formatted(studentName, subject, score, grade, status);</code></pre>
+    </div>
+    <div class="example">
+      <div class="example-header"><span class="example-title">Text block indentation control</span><span class="ex-badge ex-realtime">Real-time</span></div>
+      <pre><code class="language-java">// Closing """ position controls indentation
+String indented = """
+        line1
+        line2
+    """;
+// Result: "    line1\n    line2\n"  (4 spaces kept)
+
+String notIndented = """
+        line1
+        line2
+""";
+// Result: "        line1\n        line2\n"  (8 spaces kept)
+
+// \ suppresses newline (continuation)
+String oneLine = """
+    SELECT * \
+    FROM students \
+    WHERE id = ?
+    """;
+// Result: "SELECT * FROM students WHERE id = ?"</code></pre>
+    </div>
+  </div>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">repository/MarkRepository.java · scheduler/DigestScheduler.java</div>
+    <pre><code class="language-java">// JPQL as text block — readable multi-line query
+@Query("""
+    SELECT m FROM Mark m
+    JOIN FETCH m.student s
+    JOIN FETCH m.subject sub
+    WHERE s.id = :studentId
+      AND s.deleted = false
+    ORDER BY sub.name ASC
+    """)
+List&lt;Mark&gt; findAllByStudentId(@Param("studentId") Long studentId);
+
+// Email body as text block
+private String buildDigestEmail(String studentName, List&lt;Mark&gt; marks) {
+    return """
+        Dear %s,
+
+        Your latest results are available on the Student Portal.
+
+        Maths:   %d (%s)
+        Science: %d (%s)
+        English: %d (%s)
+
+        Log in at https://portal.example.com
+        """.formatted(studentName,
+            score(marks,"MATHS"), grade(marks,"MATHS"),
+            score(marks,"SCIENCE"), grade(marks,"SCIENCE"),
+            score(marks,"ENGLISH"), grade(marks,"ENGLISH"));
+}</code></pre>
+  </div>
+</div>
+
+<div class="topic" id="dynamic-cds">
+  <div class="topic-title">Dynamic CDS Archives <span class="jep">JEP 350</span></div>
+  <div class="not-in-project">Not in application source code. JVM startup optimisation — configured via JVM flags. Spring Boot 3.3 adds built-in CDS support.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>Dynamic CDS Archives (Java 13) extends App CDS (Java 10) to allow creating a CDS archive automatically at application exit, without a separate class-list generation step. Run once with <code>-XX:ArchiveClassesAtExit=app.jsa</code>, then use the archive on subsequent runs with <code>-XX:SharedArchiveFile=app.jsa</code>. Spring Boot 3.3 automates this via <code>spring.context.checkpoint</code>.</p>
+  <div class="section-label"><span class="num">2</span> Examples</div>
+  <div class="examples">
+    <div class="example">
+      <div class="example-header"><span class="example-title">Auto-generate archive at exit</span><span class="ex-badge ex-simple">Simple</span></div>
+      <pre><code class="language-java">// First run — generates archive at exit
+java -XX:ArchiveClassesAtExit=student.jsa -jar student.jar
+
+// Subsequent runs — faster startup using archive
+java -XX:SharedArchiveFile=student.jsa -jar student.jar
+
+// Spring Boot 3.3 — automated
+// mvn spring-boot:process-aot
+// Then run normally — Spring Boot manages the archive</code></pre>
+    </div>
+  </div>
+</div>
+
+<div class="page-nav">
+  <a href="java12.html">← Java 12</a>
+  <a href="java14.html">Java 14 →</a>
+</div>
+</main>
+</div>
+<footer>Student Portal · Java 21 + Spring Boot 3.3.12</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+<script>
+const links=document.querySelectorAll('.sidebar-link'),topics=document.querySelectorAll('.topic');
+const obs=new IntersectionObserver(e=>{e.forEach(en=>{if(en.isIntersecting){links.forEach(l=>l.classList.remove('active'));const a=document.querySelector(`.sidebar-link[href="#${en.target.id}"]`);if(a)a.classList.add('active');}});},{rootMargin:'-49px 0px -60% 0px'});
+topics.forEach(t=>obs.observe(t));
+</script>
+</body>
+</html>

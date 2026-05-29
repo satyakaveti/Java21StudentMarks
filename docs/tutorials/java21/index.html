@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Java 21 Tutorials — Student Portal</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif; font-size:16px; line-height:1.6; color:#24292f; background:#fff; }
+a { color:#0969da; text-decoration:none; }
+a:hover { text-decoration:underline; }
+.gh-header { background:#24292f; padding:12px 32px; display:flex; align-items:center; gap:12px; border-bottom:1px solid #30363d; }
+.gh-logo { color:#fff; font-weight:600; font-size:1rem; display:flex; align-items:center; gap:8px; }
+.gh-logo svg { fill:#fff; width:28px; height:28px; flex-shrink:0; }
+.gh-breadcrumb { color:#8b949e; font-size:0.875rem; }
+.gh-breadcrumb a { color:#cdd9e5; }
+.gh-breadcrumb a:hover { color:#fff; text-decoration:none; }
+.hero { background:#f6f8fa; border-bottom:1px solid #d0d7de; padding:40px 32px; }
+.hero h1 { font-size:1.75rem; font-weight:600; color:#24292f; margin-bottom:8px; }
+.hero p { color:#57606a; font-size:0.9375rem; max-width:640px; }
+.container { max-width:1012px; margin:0 auto; padding:32px; }
+h2.section { font-size:1.25rem; font-weight:600; border-bottom:1px solid #d0d7de; padding-bottom:8px; margin-bottom:20px; }
+table { width:100%; border-collapse:collapse; font-size:0.875rem; }
+th { background:#f6f8fa; border:1px solid #d0d7de; padding:8px 12px; text-align:left; font-weight:600; color:#24292f; }
+td { border:1px solid #d0d7de; padding:8px 12px; vertical-align:top; color:#24292f; }
+td:first-child { white-space:nowrap; font-weight:600; }
+td a { color:#0969da; }
+.badge { display:inline-block; font-size:0.7rem; font-weight:600; padding:1px 7px; border-radius:2em; margin-left:6px; }
+.badge-lts { background:#dafbe1; color:#1a7f37; border:1px solid #4ac26b66; }
+.badge-current { background:#ddf4ff; color:#0969da; border:1px solid #54aeff66; }
+.badge-preview { background:#fff8c5; color:#9a6700; border:1px solid #d4a72c66; }
+tr:hover td { background:#f6f8fa; }
+footer { margin-top:48px; padding:24px 32px; border-top:1px solid #d0d7de; background:#f6f8fa; text-align:center; font-size:0.8rem; color:#57606a; }
+</style>
+</head>
+<body>
+<header class="gh-header">
+  <div class="gh-logo">
+    <svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+    Student Portal
+  </div>
+  <span class="gh-breadcrumb"><a href="../index.html">tutorials</a> / java21</span>
+</header>
+<div class="hero">
+  <h1>☕ Java 8 → 21 — Complete Tutorial</h1>
+  <p>Every Java feature from version 8 to 21, with high-level overview, examples, and how each is used in the Student Portal project.</p>
+</div>
+<div class="container">
+  <h2 class="section">All Versions</h2>
+  <table>
+    <thead>
+      <tr><th>Version</th><th>Released</th><th>Key Features</th><th>Tutorial</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Java 8 <span class="badge badge-lts">LTS</span></td><td>Mar 2014</td><td>Lambda, Streams, Optional, Date/Time API, CompletableFuture, Default Methods</td><td><a href="java8.html">Open →</a></td></tr>
+      <tr><td>Java 9</td><td>Sep 2017</td><td>JPMS Modules, JShell, Collection Factories, Stream Updates, Private Interface Methods</td><td><a href="java9.html">Open →</a></td></tr>
+      <tr><td>Java 10</td><td>Mar 2018</td><td>var Type Inference, App CDS, GC Improvements</td><td><a href="java10.html">Open →</a></td></tr>
+      <tr><td>Java 11 <span class="badge badge-lts">LTS</span></td><td>Sep 2018</td><td>HttpClient, String API, var in Lambda, Single File Execution, TLS 1.3, Flight Recorder</td><td><a href="java11.html">Open →</a></td></tr>
+      <tr><td>Java 12</td><td>Mar 2019</td><td>Switch Expressions (Preview), Shenandoah GC, JVM Constants API</td><td><a href="java12.html">Open →</a></td></tr>
+      <tr><td>Java 13</td><td>Sep 2019</td><td>Text Blocks (Preview), Dynamic CDS Archives</td><td><a href="java13.html">Open →</a></td></tr>
+      <tr><td>Java 14</td><td>Mar 2020</td><td>Records (Preview), Pattern instanceof (Preview), Helpful NPEs, Switch Expressions</td><td><a href="java14.html">Open →</a></td></tr>
+      <tr><td>Java 15</td><td>Sep 2020</td><td>Text Blocks (Standard), Sealed Classes (Preview), Hidden Classes, ZGC</td><td><a href="java15.html">Open →</a></td></tr>
+      <tr><td>Java 16</td><td>Mar 2021</td><td>Records (Standard), Pattern instanceof (Standard), Vector API, Unix-Domain Sockets</td><td><a href="java16.html">Open →</a></td></tr>
+      <tr><td>Java 17 <span class="badge badge-lts">LTS</span></td><td>Sep 2021</td><td>Sealed Classes (Standard), Strong Encapsulation, Pattern Enhancements, Foreign Function API</td><td><a href="java17.html">Open →</a></td></tr>
+      <tr><td>Java 18</td><td>Mar 2022</td><td>Simple Web Server, UTF-8 Default, JavaDoc Snippets</td><td><a href="java18.html">Open →</a></td></tr>
+      <tr><td>Java 19</td><td>Sep 2022</td><td>Virtual Threads (Preview), Structured Concurrency (Incubator), Record Patterns (Preview)</td><td><a href="java19.html">Open →</a></td></tr>
+      <tr><td>Java 20</td><td>Mar 2023</td><td>Scoped Values (Incubator), Record Pattern Enhancements, Virtual Thread Updates</td><td><a href="java20.html">Open →</a></td></tr>
+      <tr><td>Java 21 <span class="badge badge-current">LTS ★</span></td><td>Sep 2023</td><td>Virtual Threads ✓, Record Patterns ✓, Pattern Switch ✓, Sequenced Collections, ZGC Generational</td><td><a href="java21.html">Open →</a></td></tr>
+    </tbody>
+  </table>
+</div>
+<footer>Student Portal · Java 21 + Spring Boot 3.3.12</footer>
+</body>
+</html>
