@@ -1,7 +1,6 @@
 package com.studentresults.config;
 
 import com.studentresults.security.JwtAuthFilter;
-import com.studentresults.security.OAuth2SuccessHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -36,14 +35,11 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
-    private final OAuth2SuccessHandler oauth2SuccessHandler;
     private final UserDetailsService userDetailsService;
 
     public SecurityConfig(JwtAuthFilter jwtAuthFilter,
-                          OAuth2SuccessHandler oauth2SuccessHandler,
                           UserDetailsService userDetailsService) {
         this.jwtAuthFilter = jwtAuthFilter;
-        this.oauth2SuccessHandler = oauth2SuccessHandler;
         this.userDetailsService = userDetailsService;
     }
 
@@ -55,12 +51,10 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/actuator/health", "/actuator/info").permitAll()
+                .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
                 .requestMatchers("/api/results/**").hasRole("STUDENT")
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
-            )
-            .oauth2Login(oauth2 -> oauth2
-                .successHandler(oauth2SuccessHandler)
             )
             .exceptionHandling(ex -> ex
                 .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))

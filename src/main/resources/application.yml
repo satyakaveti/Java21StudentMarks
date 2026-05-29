@@ -2,6 +2,18 @@ spring:
   application:
     name: student-results
 
+  # ── Docker Compose auto-start (disable if Docker Desktop not running) ──
+  docker:
+    compose:
+      enabled: false
+
+  # ── DataSource ─────────────────────────────────────────────────
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5432/students_db
+    username: postgres
+    password: postgres
+
   # ── Virtual threads (Spring Boot 3.2+, Java 21) ────────────────
   threads:
     virtual:
@@ -41,6 +53,11 @@ spring:
     serialization:
       write-dates-as-timestamps: false
     default-property-inclusion: non_null
+
+# ── Logging ──────────────────────────────────────────────────────
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %5p %d{student-results} [%t] %logger{36} : %m%n"
 
 # ── Server ───────────────────────────────────────────────────────
 server:
