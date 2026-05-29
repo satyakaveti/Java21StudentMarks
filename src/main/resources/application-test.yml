@@ -1,0 +1,26 @@
+spring:
+  docker:
+    compose:
+      enabled: false     # Testcontainers provides postgres in tests
+
+  # ── Mail: disabled in tests ────────────────────────────────────
+  mail:
+    host: localhost
+    port: 25
+
+  # ── Scheduling: disabled in tests ─────────────────────────────
+  task:
+    scheduling:
+      enabled: false
+
+app:
+  email:
+    enabled: false     # no real emails during tests
+  jwt:
+    secret: test-secret-key-for-unit-tests-only-256-bits-long!!
+    access-token-expiry-ms: 3600000
+    refresh-token-expiry-ms: 86400000
+
+logging:
+  level:
+    com.studentresults: DEBUG

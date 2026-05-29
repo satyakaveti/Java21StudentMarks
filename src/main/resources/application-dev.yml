@@ -1,0 +1,36 @@
+spring:
+  # ── Docker Compose auto-start (Boot 3.1+) ──────────────────────
+  docker:
+    compose:
+      enabled: true
+      file: compose.yml
+      lifecycle-management: start-and-stop
+
+  # ── Datasource (from Docker Compose service connection) ────────
+  datasource:
+    url: jdbc:postgresql://localhost:5432/studentresults
+    username: ${DB_USER:student}
+    password: ${DB_PASSWORD:student}
+    driver-class-name: org.postgresql.Driver
+
+  # ── Verbose SQL in dev ─────────────────────────────────────────
+  jpa:
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  # ── DevTools ───────────────────────────────────────────────────
+  devtools:
+    restart:
+      enabled: true
+    livereload:
+      enabled: true
+
+# ── Logging ───────────────────────────────────────────────────────
+logging:
+  level:
+    com.studentresults: DEBUG
+    org.springframework.security: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.orm.jdbc.bind: TRACE

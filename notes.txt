@@ -1,0 +1,7 @@
+Java 21 + Spring Boot 4.0.6 — Final Upgrade Plan
+Target: Eclipse Temurin 21.0.10+9 (OpenJDK)  ·  Spring Boot 4.0.6  ·  Zero Licensing Cost
+
+only version bumps + the minimum code changes required because specific classes are literally removed/renamed.
+
+/Users/satyakaveti/Code/Workspace/Own/Java21StudentMarks
+Read Java21StudentMarks Project opened in Intellij, able to read ?

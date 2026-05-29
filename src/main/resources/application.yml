@@ -1,0 +1,75 @@
+spring:
+  application:
+    name: student-results
+
+  # ── Virtual threads (Spring Boot 3.2+, Java 21) ────────────────
+  threads:
+    virtual:
+      enabled: true
+
+  # ── JPA / Hibernate ────────────────────────────────────────────
+  jpa:
+    hibernate:
+      ddl-auto: validate          # Flyway owns the schema; Hibernate validates only
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        default_batch_fetch_size: 20  # mitigate N+1 on lazy collections
+
+  # ── Flyway ─────────────────────────────────────────────────────
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: false
+
+  # ── Redis ──────────────────────────────────────────────────────
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
+  # ── Mail ───────────────────────────────────────────────────────
+  mail:
+    host: ${MAIL_HOST:localhost}
+    port: ${MAIL_PORT:1025}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+
+  # ── Jackson ────────────────────────────────────────────────────
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    default-property-inclusion: non_null
+
+# ── Server ───────────────────────────────────────────────────────
+server:
+  port: 8080
+  shutdown: graceful    # in-flight requests complete before stop
+
+# ── Actuator ─────────────────────────────────────────────────────
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,loggers,env
+  endpoint:
+    health:
+      show-details: when-authorized
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
+
+# ── App custom properties ─────────────────────────────────────────
+app:
+  jwt:
+    secret: ${JWT_SECRET:change-me-in-production-must-be-256-bits-long!!}
+    access-token-expiry-ms: 900000       # 15 minutes
+    refresh-token-expiry-ms: 604800000   # 7 days
+  email:
+    from: ${EMAIL_FROM:noreply@studentresults.local}
+    enabled: true
+  cors:
+    allowed-origins: ${CORS_ORIGINS:http://localhost:3000}
