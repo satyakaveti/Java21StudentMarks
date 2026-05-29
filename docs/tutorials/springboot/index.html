@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Spring Boot Tutorials — Student Portal</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif;font-size:16px;line-height:1.6;color:#24292f;background:#fff}
+a{color:#0969da;text-decoration:none}
+a:hover{text-decoration:underline}
+.gh-header{background:#24292f;padding:12px 32px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #30363d}
+.gh-logo{color:#fff;font-weight:600;font-size:1rem;display:flex;align-items:center;gap:8px}
+.gh-logo svg{fill:#fff;width:28px;height:28px;flex-shrink:0}
+.gh-breadcrumb{color:#8b949e;font-size:0.875rem}
+.gh-breadcrumb a{color:#cdd9e5}
+.hero{background:#f6f8fa;border-bottom:1px solid #d0d7de;padding:40px 32px}
+.hero h1{font-size:1.75rem;font-weight:600;color:#24292f;margin-bottom:8px}
+.hero p{color:#57606a;font-size:0.9375rem;max-width:640px}
+.container{max-width:1012px;margin:0 auto;padding:32px}
+h2.section{font-size:1.25rem;font-weight:600;border-bottom:1px solid #d0d7de;padding-bottom:8px;margin-bottom:20px}
+table{width:100%;border-collapse:collapse;font-size:0.875rem}
+th{background:#f6f8fa;border:1px solid #d0d7de;padding:8px 12px;text-align:left;font-weight:600;color:#24292f}
+td{border:1px solid #d0d7de;padding:8px 12px;vertical-align:top;color:#24292f}
+td:first-child{white-space:nowrap;font-weight:600}
+td a{color:#0969da}
+.badge{display:inline-block;font-size:0.7rem;font-weight:600;padding:1px 7px;border-radius:2em;margin-left:6px}
+.badge-core{background:#ddf4ff;color:#0969da;border:1px solid #54aeff66}
+.badge-web{background:#f3f0ff;color:#6639ba;border:1px solid #8256d066}
+.badge-sec{background:#ffebe9;color:#cf222e;border:1px solid #ff818266}
+.badge-data{background:#dafbe1;color:#1a7f37;border:1px solid #4ac26b66}
+.badge-aop{background:#fff8c5;color:#9a6700;border:1px solid #d4a72c66}
+tr:hover td{background:#f6f8fa}
+footer{margin-top:48px;padding:24px 32px;border-top:1px solid #d0d7de;background:#f6f8fa;text-align:center;font-size:0.8rem;color:#57606a}
+</style>
+</head>
+<body>
+<header class="gh-header">
+  <div class="gh-logo">
+    <svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+    Student Portal
+  </div>
+  <span class="gh-breadcrumb"><a href="../index.html">tutorials</a> / springboot</span>
+</header>
+<div class="hero">
+  <h1>🌱 Spring Boot 3.3 — Complete Module Tutorials</h1>
+  <p>Every Spring module used in the Student Portal — IoC, MVC, Security, Data JPA, AOP, Cache, Events, Scheduling, Validation, Actuator, and Testing — with high-level overviews, examples, and real project snippets.</p>
+</div>
+<div class="container">
+  <h2 class="section">All Modules</h2>
+  <table>
+    <thead>
+      <tr><th>Module</th><th>Key Annotations / Classes</th><th>Used For</th><th>Tutorial</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Spring Core — IoC &amp; DI <span class="badge badge-core">Core</span></td><td>@Component, @Service, @Bean, @Profile, @Conditional, ApplicationRunner, BeanPostProcessor</td><td>Wire every layer of the app, dev seeder, conditional cache</td><td><a href="01-core-ioc-di.html">Open →</a></td></tr>
+      <tr><td>Spring MVC — REST API <span class="badge badge-web">Web</span></td><td>@RestController, @RequestMapping, @Valid, ResponseEntity, ProblemDetail, SseEmitter, @HttpExchange</td><td>All REST endpoints, error handling, SSE notifications</td><td><a href="02-spring-mvc.html">Open →</a></td></tr>
+      <tr><td>Spring Security 6 <span class="badge badge-sec">Security</span></td><td>SecurityFilterChain, JwtAuthFilter, @PreAuthorize, @PostAuthorize, BCrypt, OAuth2</td><td>JWT auth, role-based access, method-level security</td><td><a href="03-spring-security.html">Open →</a></td></tr>
+      <tr><td>Spring Data JPA <span class="badge badge-data">Data</span></td><td>@Entity, @Repository, @Query, JpaSpecificationExecutor, @Version, @SQLDelete, Pageable</td><td>All DB access, soft delete, optimistic locking, pagination</td><td><a href="04-spring-data-jpa.html">Open →</a></td></tr>
+      <tr><td>Spring AOP <span class="badge badge-aop">AOP</span></td><td>@Aspect, @Around, @Before, @AfterThrowing, custom @Auditable</td><td>Audit logging, performance monitoring, retry on failure</td><td><a href="05-spring-aop.html">Open →</a></td></tr>
+      <tr><td>Spring Cache <span class="badge badge-core">Cache</span></td><td>@Cacheable, @CachePut, @CacheEvict, RedisCacheManager, @Scheduled flush</td><td>Cache student results in Redis, 5-minute TTL</td><td><a href="06-spring-cache.html">Open →</a></td></tr>
+      <tr><td>Spring Events <span class="badge badge-core">Events</span></td><td>ApplicationEventPublisher, @EventListener, @TransactionalEventListener, @Async</td><td>Audit on create/update, email after commit, async dispatch</td><td><a href="07-spring-events.html">Open →</a></td></tr>
+      <tr><td>Spring Scheduling <span class="badge badge-core">Scheduling</span></td><td>@EnableScheduling, @Scheduled(cron), @Scheduled(fixedDelay)</td><td>Daily digest email, JWT blacklist cleanup, cache refresh</td><td><a href="08-spring-scheduling.html">Open →</a></td></tr>
+      <tr><td>Spring Validation <span class="badge badge-web">Validation</span></td><td>@NotBlank, @Valid, @Validated, custom @MarkRange, validation groups</td><td>Validate all request DTOs, custom mark range, uniqueness</td><td><a href="09-spring-validation.html">Open →</a></td></tr>
+      <tr><td>Configuration Properties <span class="badge badge-core">Config</span></td><td>@ConfigurationProperties record, @Validated, profiles, environment secrets</td><td>App config as typed records, profile overrides, secrets</td><td><a href="10-config-properties.html">Open →</a></td></tr>
+      <tr><td>Spring Actuator &amp; Micrometer <span class="badge badge-core">Ops</span></td><td>@Timed, @Observed, MeterRegistry, Counter, Timer, AbstractHealthIndicator</td><td>Health checks, custom metrics, Prometheus, structured logs</td><td><a href="11-actuator-micrometer.html">Open →</a></td></tr>
+      <tr><td>Spring Boot Testing <span class="badge badge-data">Testing</span></td><td>@SpringBootTest, @WebMvcTest, @DataJpaTest, @Testcontainers, @ServiceConnection, MockMvc</td><td>Full integration tests, controller slices, DB slices</td><td><a href="12-testing.html">Open →</a></td></tr>
+      <tr><td>Virtual Threads &amp; RestClient <span class="badge badge-web">Boot 3.2</span></td><td>spring.threads.virtual.enabled, RestClient, StructuredTaskScope</td><td>I/O throughput, replace RestTemplate, parallel subject fetch</td><td><a href="13-virtual-threads-restclient.html">Open →</a></td></tr>
+    </tbody>
+  </table>
+</div>
+<footer>Student Portal · Java 21 + Spring Boot 3.3.12</footer>
+</body>
+</html>

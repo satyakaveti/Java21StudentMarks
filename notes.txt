@@ -73,6 +73,14 @@ Docs UI should have home page at docs/tutorials
  mention wont fit in this project
 
 
+/Users/satyakaveti/Code/Workspace/Own/Java21StudentMarks
+Read Java21StudentMarks Project opened in Intellij, able to read ?
+creare springboot tutorials detailed level
+covering all topics with examples from readme.md doc in this section
+Part 3 — Spring Modules Coverage
+
+here also create sepeate file by module or topic, sama as java21 tutorail
+
 Each page has the same GitHub light layout — left sidebar with all topics for that version, right content with all 3 sections per feature. Let me build them all now.
 
  why you are creating single index, you can create seprate file for each version right

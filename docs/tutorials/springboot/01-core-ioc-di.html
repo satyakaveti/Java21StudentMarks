@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Spring Core — IoC &amp; DI — Student Portal</title>
+<link rel="stylesheet" href="gh.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css"/>
+</head>
+<body>
+<header class="gh-header">
+  <div class="gh-logo"><svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>Student Portal</div>
+  <span class="gh-breadcrumb"><a href="../index.html">tutorials</a> / <a href="index.html">springboot</a> / <span>core-ioc-di</span></span>
+</header>
+<div class="layout">
+<nav class="sidebar">
+  <div class="sidebar-nav-header"><a href="index.html">← All Modules</a></div>
+  <div class="sidebar-section">Topics</div>
+  <a class="sidebar-link" href="#ioc">IoC Container</a>
+  <a class="sidebar-link" href="#constructor-injection">Constructor Injection</a>
+  <a class="sidebar-link" href="#stereotypes">Bean Stereotypes</a>
+  <a class="sidebar-link" href="#configuration">@Configuration &amp; @Bean</a>
+  <a class="sidebar-link" href="#profile">@Profile</a>
+  <a class="sidebar-link" href="#conditional">@Conditional</a>
+  <a class="sidebar-link" href="#applicationrunner">ApplicationRunner</a>
+  <a class="sidebar-link" href="#beanpostprocessor">BeanPostProcessor</a>
+  <a class="sidebar-link" href="#lazy">@Lazy</a>
+  <div class="sidebar-section">All Modules</div>
+  <div class="sidebar-modules">
+    <a class="mod-link current-mod" href="01-core-ioc-di.html">01 · Core IoC &amp; DI</a>
+    <a class="mod-link" href="02-spring-mvc.html">02 · Spring MVC</a>
+    <a class="mod-link" href="03-spring-security.html">03 · Security</a>
+    <a class="mod-link" href="04-spring-data-jpa.html">04 · Data JPA</a>
+    <a class="mod-link" href="05-spring-aop.html">05 · AOP</a>
+    <a class="mod-link" href="06-spring-cache.html">06 · Cache</a>
+    <a class="mod-link" href="07-spring-events.html">07 · Events</a>
+    <a class="mod-link" href="08-spring-scheduling.html">08 · Scheduling</a>
+    <a class="mod-link" href="09-spring-validation.html">09 · Validation</a>
+    <a class="mod-link" href="10-config-properties.html">10 · Config Properties</a>
+    <a class="mod-link" href="11-actuator-micrometer.html">11 · Actuator</a>
+    <a class="mod-link" href="12-testing.html">12 · Testing</a>
+    <a class="mod-link" href="13-virtual-threads-restclient.html">13 · Virtual Threads</a>
+  </div>
+</nav>
+<main class="main">
+<div class="ver-header">
+  <div class="ver-meta"><span class="badge badge-core">Core</span><span style="font-size:0.875rem;color:#57606a">Spring Boot 3.3.12</span></div>
+  <h1>Spring Core — IoC, Dependency Injection &amp; Bean Lifecycle</h1>
+  <p>The foundation of everything in Spring. The IoC container owns all objects (beans), wires dependencies automatically, and manages the full lifecycle from creation to destruction. Understanding this module is understanding Spring itself.</p>
+</div>
+
+<!-- IOC -->
+<div class="topic" id="ioc">
+  <div class="topic-title">IoC Container</div>
+  <div class="in-project-note">The entire project runs inside the Spring IoC container — every service, controller, repository, and filter is a bean managed by it.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p><strong>Inversion of Control</strong> means your code no longer controls object creation — Spring does. You describe what you need; the container figures out how to build and wire it. The container is represented by <code>ApplicationContext</code>, which holds all beans, resolves dependencies, applies proxies (AOP, transactions, caching), and fires lifecycle callbacks.</p>
+  <p>Instead of <code>new StudentService(new StudentRepository(new DataSource(...)))</code>, you just declare <code>StudentService</code> needs a <code>StudentRepository</code> and Spring handles the rest. This enables loose coupling, easy testing, and configuration-driven behaviour.</p>
+  <div class="section-label"><span class="num">2</span> Examples</div>
+  <div class="examples">
+    <div class="example">
+      <div class="example-header"><span class="example-title">Without IoC vs With IoC</span><span class="ex-badge ex-simple">Simple</span></div>
+      <pre><code class="language-java">// ❌ Without IoC — tight coupling, impossible to unit test
+public class StudentController {
+    private StudentService service = new StudentService(
+        new StudentRepository(DataSourceFactory.create())
+    );
+}
+
+// ✅ With IoC — Spring builds and injects everything
+@RestController
+public class StudentController {
+    private final StudentService studentService;
+    public StudentController(StudentService studentService) {
+        this.studentService = studentService;
+    }
+}</code></pre>
+    </div>
+    <div class="example">
+      <div class="example-header"><span class="example-title">ApplicationContext directly</span><span class="ex-badge ex-medium">Medium</span></div>
+      <pre><code class="language-java">// Spring Boot creates this for you on startup — you rarely need it directly
+// But it's good to know what's happening under the hood
+@SpringBootApplication
+public class StudentPortalApplication {
+    public static void main(String[] args) {
+        ApplicationContext ctx = SpringApplication.run(StudentPortalApplication.class, args);
+
+        // All beans are now available
+        StudentService service = ctx.getBean(StudentService.class);
+        String[] allBeans = ctx.getBeanDefinitionNames(); // every registered bean
+        System.out.println("Beans loaded: " + allBeans.length);
+    }
+}</code></pre>
+    </div>
+  </div>
+</div>
+
+<!-- CONSTRUCTOR INJECTION -->
+<div class="topic" id="constructor-injection">
+  <div class="topic-title">Constructor Injection</div>
+  <div class="in-project-note">Used everywhere in this project — all controllers, services, repositories use constructor injection. No @Autowired on fields.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>Spring supports three DI styles: field injection (<code>@Autowired</code> on field), setter injection, and constructor injection. <strong>Constructor injection is the best practice</strong> because: dependencies are explicit, the class is immutable (<code>final</code> fields), and you can unit-test without Spring by just calling <code>new MyService(mockRepo)</code>. Spring Boot auto-detects a single constructor and injects it — no annotation needed.</p>
+  <div class="section-label"><span class="num">2</span> Examples</div>
+  <div class="examples">
+    <div class="example">
+      <div class="example-header"><span class="example-title">Field vs Constructor injection</span><span class="ex-badge ex-simple">Simple</span></div>
+      <pre><code class="language-java">// ❌ Field injection — hard to test, hidden dependencies
+@Service
+public class ResultService {
+    @Autowired private MarkRepository markRepository;  // can't make final
+    @Autowired private StudentRepository studentRepository;
+}
+
+// ✅ Constructor injection — explicit, testable, immutable
+@Service
+public class ResultService {
+    private final MarkRepository markRepository;
+    private final StudentRepository studentRepository;
+
+    // Spring injects both automatically — no @Autowired needed
+    public ResultService(MarkRepository markRepository,
+                         StudentRepository studentRepository) {
+        this.markRepository = markRepository;
+        this.studentRepository = studentRepository;
+    }
+}
+
+// Unit test — no Spring context needed at all
+class ResultServiceTest {
+    @Test void testSummary() {
+        var service = new ResultService(mockMarkRepo, mockStudentRepo);
+        // test directly
+    }
+}</code></pre>
+    </div>
+    <div class="example">
+      <div class="example-header"><span class="example-title">Multiple constructors — use @Autowired on one</span><span class="ex-badge ex-medium">Medium</span></div>
+      <pre><code class="language-java">@Service
+public class NotificationService {
+    private final EmailClient emailClient;
+    private final AppProperties appProperties;
+    private final ApplicationEventPublisher publisher;
+
+    // When multiple constructors exist, mark the one Spring should use
+    @Autowired
+    public NotificationService(EmailClient emailClient,
+                                AppProperties appProperties,
+                                ApplicationEventPublisher publisher) {
+        this.emailClient = emailClient;
+        this.appProperties = appProperties;
+        this.publisher = publisher;
+    }
+
+    // Secondary constructor for testing — Spring ignores this one
+    public NotificationService(EmailClient emailClient) {
+        this(emailClient, AppProperties.defaults(), null);
+    }
+}</code></pre>
+    </div>
+  </div>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">service/StudentService.java</div>
+    <pre><code class="language-java">@Service
+public class StudentService {
+
+    private final StudentRepository studentRepository;
+    private final ApplicationEventPublisher eventPublisher;
+    private final AppProperties appProperties;
+
+    // Single constructor — Spring injects all three, no @Autowired needed
+    public StudentService(StudentRepository studentRepository,
+                          ApplicationEventPublisher eventPublisher,
+                          AppProperties appProperties) {
+        this.studentRepository = studentRepository;
+        this.eventPublisher = eventPublisher;
+        this.appProperties = appProperties;
+    }
+
+    public StudentDTO createStudent(CreateStudentRequest request) {
+        var student = new Student(request.rollNumber(), request.name(), request.email());
+        var saved = studentRepository.save(student);
+        eventPublisher.publishEvent(new StudentCreatedEvent(saved.getId()));
+        return toDTO(saved);
+    }
+}</code></pre>
+  </div>
+</div>
+
+<!-- STEREOTYPES -->
+<div class="topic" id="stereotypes">
+  <div class="topic-title">Bean Stereotypes</div>
+  <div class="in-project-note">Every layer uses a different stereotype — @RestController for web, @Service for business logic, @Repository for DB, @Component for everything else.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>All stereotypes are specialisations of <code>@Component</code> — they all register a bean. The difference is semantics and additional behaviour: <code>@Repository</code> enables exception translation (converts JDBC exceptions to Spring's <code>DataAccessException</code>). <code>@Service</code> is a marker for business logic. <code>@RestController</code> = <code>@Controller</code> + <code>@ResponseBody</code>.</p>
+  <table>
+    <tr><th>Stereotype</th><th>Layer</th><th>Extra Behaviour</th></tr>
+    <tr><td><code>@Component</code></td><td>Any</td><td>Base — just registers a bean</td></tr>
+    <tr><td><code>@Service</code></td><td>Business logic</td><td>Semantic marker only</td></tr>
+    <tr><td><code>@Repository</code></td><td>Data access</td><td>Exception translation</td></tr>
+    <tr><td><code>@Controller</code></td><td>Web MVC</td><td>Registers as MVC handler</td></tr>
+    <tr><td><code>@RestController</code></td><td>REST API</td><td>= @Controller + @ResponseBody</td></tr>
+    <tr><td><code>@Configuration</code></td><td>Config</td><td>CGLIB proxy — @Bean methods are intercepted</td></tr>
+  </table>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">Stereotype usage across all layers</div>
+    <pre><code class="language-java">@RestController @RequestMapping("/api/admin/students")
+public class AdminController { ... }          // Web layer
+
+@RestController @RequestMapping("/api/results")
+public class ResultController { ... }         // Web layer
+
+@Service
+public class StudentService { ... }           // Business logic
+
+@Service
+public class ResultService { ... }            // Business logic
+
+@Repository
+public interface StudentRepository
+    extends JpaRepository&lt;Student, Long&gt; { }  // Data layer — Spring Data impl
+
+@Component
+public class JwtAuthFilter
+    extends OncePerRequestFilter { ... }      // Security filter
+
+@Component
+public class AuditAspect { ... }              // AOP aspect
+
+@Configuration
+public class SecurityConfig { ... }           // Security bean config
+
+@Configuration
+public class CacheConfig { ... }              // Cache bean config</code></pre>
+  </div>
+</div>
+
+<!-- CONFIGURATION -->
+<div class="topic" id="configuration">
+  <div class="topic-title">@Configuration &amp; @Bean</div>
+  <div class="in-project-note">Used in CacheConfig, SecurityConfig, AsyncConfig, JpaConfig — anywhere we need to configure third-party beans or complex wiring.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p><code>@Configuration</code> classes are the programmatic alternative to XML. <code>@Bean</code> methods declare beans you need full control over — typically third-party objects you can't annotate. Spring proxies <code>@Configuration</code> classes with CGLIB, so calling one <code>@Bean</code> method from another always returns the same singleton instance.</p>
+  <div class="section-label"><span class="num">2</span> Examples</div>
+  <div class="examples">
+    <div class="example">
+      <div class="example-header"><span class="example-title">Simple @Bean registration</span><span class="ex-badge ex-simple">Simple</span></div>
+      <pre><code class="language-java">@Configuration
+public class AppConfig {
+
+    // Spring calls this once, registers return value as a singleton bean
+    @Bean
+    public BCryptPasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder(12);
+    }
+
+    // Spring injects the bean above automatically into this method
+    @Bean
+    public AuthenticationManager authManager(AuthenticationConfiguration config)
+            throws Exception {
+        return config.getAuthenticationManager();
+    }
+}</code></pre>
+    </div>
+    <div class="example">
+      <div class="example-header"><span class="example-title">Full cache config with TTL</span><span class="ex-badge ex-medium">Medium</span></div>
+      <pre><code class="language-java">@Configuration
+@EnableCaching
+public class CacheConfig {
+
+    @Bean
+    public RedisCacheConfiguration defaultCacheConfig() {
+        return RedisCacheConfiguration.defaultCacheConfig()
+            .entryTtl(Duration.ofMinutes(5))
+            .disableCachingNullValues()
+            .serializeValuesWith(RedisSerializationContext.SerializationPair
+                .fromSerializer(new GenericJackson2JsonRedisSerializer()));
+    }
+
+    @Bean
+    public CacheManager cacheManager(RedisConnectionFactory factory,
+                                     RedisCacheConfiguration defaultConfig) {
+        return RedisCacheManager.builder(factory)
+            .cacheDefaults(defaultConfig)
+            .withCacheConfiguration("results",
+                defaultConfig.entryTtl(Duration.ofMinutes(5)))
+            .withCacheConfiguration("students",
+                defaultConfig.entryTtl(Duration.ofMinutes(10)))
+            .build();
+    }
+}</code></pre>
+    </div>
+    <div class="example">
+      <div class="example-header"><span class="example-title">Async config with virtual thread executor</span><span class="ex-badge ex-realtime">Real-time</span></div>
+      <pre><code class="language-java">@Configuration
+@EnableAsync
+public class AsyncConfig {
+
+    // Java 21 virtual thread executor for all @Async methods
+    @Bean(name = "virtualThreadExecutor")
+    public Executor virtualThreadExecutor() {
+        return Executors.newVirtualThreadPerTaskExecutor();
+    }
+
+    // Configure @Async to use this executor by default
+    @Bean
+    public AsyncConfigurer asyncConfigurer() {
+        return new AsyncConfigurer() {
+            @Override
+            public Executor getAsyncExecutor() {
+                return virtualThreadExecutor();
+            }
+            @Override
+            public AsyncUncaughtExceptionHandler getAsyncUncaughtExceptionHandler() {
+                return (ex, method, params) ->
+                    log.error("Async error in {}: {}", method.getName(), ex.getMessage());
+            }
+        };
+    }
+}</code></pre>
+    </div>
+  </div>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">config/JpaConfig.java</div>
+    <pre><code class="language-java">@Configuration
+@EnableJpaAuditing(auditorAwareRef = "auditorProvider")
+public class JpaConfig {
+
+    // Tells JPA auditing (@CreatedBy, @LastModifiedBy) who the current user is
+    @Bean
+    public AuditorAware&lt;String&gt; auditorProvider() {
+        return () -> Optional.ofNullable(SecurityContextHolder.getContext())
+            .map(SecurityContext::getAuthentication)
+            .filter(Authentication::isAuthenticated)
+            .map(Authentication::getName);
+    }
+}</code></pre>
+  </div>
+</div>
+
+<!-- PROFILE -->
+<div class="topic" id="profile">
+  <div class="topic-title">@Profile</div>
+  <div class="in-project-note">Used for DevDataSeeder (dev only), mock email service (test only), structured logging (prod only).</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p><code>@Profile</code> activates a bean only when a specific Spring profile is active. Profiles are set via <code>spring.profiles.active</code> in properties, environment variable, or JVM arg. This project uses three profiles: <code>dev</code> (Docker Compose, seed data, verbose SQL), <code>test</code> (Testcontainers, mock email), and <code>prod</code> (connection pool tuning, JSON logs).</p>
+  <div class="section-label"><span class="num">2</span> Examples</div>
+  <div class="examples">
+    <div class="example">
+      <div class="example-header"><span class="example-title">Profile-specific beans</span><span class="ex-badge ex-simple">Simple</span></div>
+      <pre><code class="language-java">@Service @Profile("!prod")   // active in dev and test, NOT in prod
+public class MockEmailService implements EmailService {
+    public void send(String to, String subject, String body) {
+        System.out.println("[MOCK EMAIL] To: " + to + " | " + subject);
+    }
+}
+
+@Service @Profile("prod")    // active only in prod
+public class SmtpEmailService implements EmailService {
+    public void send(String to, String subject, String body) {
+        // real SMTP send
+    }
+}</code></pre>
+    </div>
+    <div class="example">
+      <div class="example-header"><span class="example-title">Profile in @Configuration + yml</span><span class="ex-badge ex-medium">Medium</span></div>
+      <pre><code class="language-java">// application-dev.yml
+// spring:
+//   jpa:
+//     show-sql: true
+//   docker:
+//     compose:
+//       enabled: true
+
+// application-prod.yml
+// spring:
+//   jpa:
+//     show-sql: false
+// logging:
+//   structured:
+//     format:
+//       console: ecs
+
+@Configuration @Profile("dev")
+public class DevConfig {
+    @Bean
+    public CommandLineRunner printBeans(ApplicationContext ctx) {
+        return args -> System.out.println(
+            "Dev mode — " + ctx.getBeanDefinitionCount() + " beans loaded");
+    }
+}</code></pre>
+    </div>
+  </div>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">config/DevDataSeeder.java</div>
+    <pre><code class="language-java">@Component
+@Profile("dev")   // This bean does not exist in test or prod
+public class DevDataSeeder implements ApplicationRunner {
+
+    private final StudentRepository studentRepository;
+
+    public DevDataSeeder(StudentRepository studentRepository) {
+        this.studentRepository = studentRepository;
+    }
+
+    @Override
+    public void run(ApplicationArguments args) {
+        if (studentRepository.count() > 0) return; // idempotent
+
+        var students = List.of(
+            new Student("S001", "Arjun Kumar",  "arjun@school.com"),
+            new Student("S002", "Priya Sharma", "priya@school.com"),
+            new Student("S003", "Ravi Teja",    "ravi@school.com")
+        );
+        studentRepository.saveAll(students);
+    }
+}</code></pre>
+  </div>
+</div>
+
+<!-- CONDITIONAL -->
+<div class="topic" id="conditional">
+  <div class="topic-title">@Conditional</div>
+  <div class="in-project-note">Used to register Redis cache service only when app.cache.enabled=true, with a NoOp fallback when Redis is unavailable.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>Spring Boot provides ready-made <code>@Conditional</code> variants: <code>@ConditionalOnProperty</code>, <code>@ConditionalOnMissingBean</code>, <code>@ConditionalOnClass</code>, <code>@ConditionalOnBean</code>. These power all of Spring Boot's auto-configuration — beans are only created when specific conditions are met, making the framework zero-config by default but fully overrideable.</p>
+  <div class="section-label"><span class="num">2</span> Examples</div>
+  <div class="examples">
+    <div class="example">
+      <div class="example-header"><span class="example-title">ConditionalOnProperty</span><span class="ex-badge ex-simple">Simple</span></div>
+      <pre><code class="language-java">@Bean
+@ConditionalOnProperty(name = "app.notifications.email.enabled",
+                        havingValue = "true",
+                        matchIfMissing = false)
+public EmailNotificationListener emailListener(NotificationService svc) {
+    return new EmailNotificationListener(svc);
+}
+// Only registers the listener if app.notifications.email.enabled=true in yml</code></pre>
+    </div>
+    <div class="example">
+      <div class="example-header"><span class="example-title">ConditionalOnMissingBean fallback</span><span class="ex-badge ex-medium">Medium</span></div>
+      <pre><code class="language-java">@Configuration
+public class CacheServiceConfig {
+
+    // Primary: Redis cache — used when Redis is on the classpath and configured
+    @Bean
+    @ConditionalOnProperty(name = "app.cache.enabled", havingValue = "true", matchIfMissing = true)
+    public ResultCacheService redisCacheService(RedisTemplate&lt;String, Object&gt; redis) {
+        return new RedisCacheService(redis);
+    }
+
+    // Fallback: no-op cache — activates only if no other ResultCacheService was registered
+    @Bean
+    @ConditionalOnMissingBean(ResultCacheService.class)
+    public ResultCacheService noOpCacheService() {
+        return new NoOpCacheService();  // passthrough, no caching
+    }
+}</code></pre>
+    </div>
+  </div>
+</div>
+
+<!-- APPLICATIONRUNNER -->
+<div class="topic" id="applicationrunner">
+  <div class="topic-title">ApplicationRunner</div>
+  <div class="in-project-note">Used as DevDataSeeder — seeds students and subjects into the DB after the full application context is started in dev mode.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p><code>ApplicationRunner</code> (and <code>CommandLineRunner</code>) are called by Spring Boot after the entire context is fully started and ready. Use them for startup tasks: DB seeding, cache warming, config validation. <code>ApplicationRunner</code> receives typed <code>ApplicationArguments</code>; <code>CommandLineRunner</code> receives raw <code>String[]</code>. Multiple runners are ordered with <code>@Order</code>.</p>
+  <div class="section-label"><span class="num">2</span> Examples</div>
+  <div class="examples">
+    <div class="example">
+      <div class="example-header"><span class="example-title">Seed subjects on startup</span><span class="ex-badge ex-simple">Simple</span></div>
+      <pre><code class="language-java">@Component
+@Order(1)  // runs before other runners
+public class SubjectSeeder implements ApplicationRunner {
+
+    private final SubjectRepository subjectRepository;
+
+    public SubjectSeeder(SubjectRepository subjectRepository) {
+        this.subjectRepository = subjectRepository;
+    }
+
+    @Override
+    public void run(ApplicationArguments args) {
+        if (subjectRepository.count() == 0) {
+            subjectRepository.saveAll(List.of(
+                new Subject("MATHS"),
+                new Subject("SCIENCE"),
+                new Subject("ENGLISH")
+            ));
+        }
+    }
+}</code></pre>
+    </div>
+    <div class="example">
+      <div class="example-header"><span class="example-title">Cache warm-up on startup</span><span class="ex-badge ex-medium">Medium</span></div>
+      <pre><code class="language-java">@Component
+@Order(2)
+@Profile("prod")
+public class CacheWarmupRunner implements ApplicationRunner {
+
+    private final ResultService resultService;
+    private final StudentRepository studentRepository;
+
+    public CacheWarmupRunner(ResultService resultService,
+                              StudentRepository studentRepository) {
+        this.resultService = resultService;
+        this.studentRepository = studentRepository;
+    }
+
+    @Override
+    public void run(ApplicationArguments args) {
+        // Pre-populate cache for top 50 most-active students
+        studentRepository.findTopActiveStudents(50)
+            .forEach(s -> resultService.getResults(s.getId())); // populates @Cacheable
+        System.out.println("[STARTUP] Cache warmed up for 50 students.");
+    }
+}</code></pre>
+    </div>
+  </div>
+</div>
+
+<!-- BEANPOSTPROCESSOR -->
+<div class="topic" id="beanpostprocessor">
+  <div class="topic-title">BeanPostProcessor</div>
+  <div class="in-project-note">Used to detect all beans implementing Auditable and initialise their audit metadata fields after creation.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p><code>BeanPostProcessor</code> intercepts every bean after it is created and lets you modify it. Spring itself uses this extensively — <code>@Transactional</code>, <code>@Async</code>, and <code>@Cacheable</code> all work via BeanPostProcessors that wrap beans in proxies. You implement two methods: <code>postProcessBeforeInitialization</code> (before <code>@PostConstruct</code>) and <code>postProcessAfterInitialization</code> (after).</p>
+  <div class="section-label"><span class="num">2</span> Examples</div>
+  <div class="examples">
+    <div class="example">
+      <div class="example-header"><span class="example-title">Detect and initialise Auditable beans</span><span class="ex-badge ex-realtime">Real-time</span></div>
+      <pre><code class="language-java">@Component
+public class AuditSetupPostProcessor implements BeanPostProcessor {
+
+    @Override
+    public Object postProcessAfterInitialization(Object bean, String beanName) {
+        // Java 16 pattern matching instanceof — no cast needed
+        if (bean instanceof Auditable auditable) {
+            auditable.initAuditFields();
+        }
+        return bean;  // MUST return the bean (or a proxy wrapping it)
+    }
+}
+
+// Any bean implementing this gets initAuditFields() called after creation
+public interface Auditable {
+    void initAuditFields();
+    LocalDateTime getLastModifiedAt();
+    default boolean isRecentlyModified() {
+        return Duration.between(getLastModifiedAt(), LocalDateTime.now()).toHours() &lt; 24;
+    }
+}</code></pre>
+    </div>
+  </div>
+</div>
+
+<!-- LAZY -->
+<div class="topic" id="lazy">
+  <div class="topic-title">@Lazy</div>
+  <div class="in-project-note">Used on the virtual thread executor bean and heavy third-party clients — created only when first needed, not at startup.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>By default, Spring creates all singleton beans at startup (eager). <code>@Lazy</code> defers creation until the bean is first requested. Useful for: expensive-to-create beans you might not use, breaking circular dependencies, and speeding up startup in dev. Note: lazy beans still participate in normal Spring lifecycle once created.</p>
+  <div class="section-label"><span class="num">2</span> Examples</div>
+  <div class="examples">
+    <div class="example">
+      <div class="example-header"><span class="example-title">Lazy executor + lazy HTTP client</span><span class="ex-badge ex-simple">Simple</span></div>
+      <pre><code class="language-java">@Configuration
+public class AsyncConfig {
+
+    @Bean
+    @Lazy  // thread pool not created until first @Async method fires
+    public Executor virtualThreadExecutor() {
+        return Executors.newVirtualThreadPerTaskExecutor();
+    }
+}
+
+@Configuration
+public class HttpClientConfig {
+
+    @Bean
+    @Lazy  // HTTP client not created until first external API call
+    public GradeImportClient gradeImportClient() {
+        return HttpServiceProxyFactory
+            .builderFor(RestClientAdapter.create(
+                RestClient.builder()
+                    .baseUrl("https://grades.external.com")
+                    .build()))
+            .build()
+            .createClient(GradeImportClient.class);
+    }
+}</code></pre>
+    </div>
+  </div>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">config/AsyncConfig.java</div>
+    <pre><code class="language-java">@Configuration
+@EnableAsync
+public class AsyncConfig {
+
+    @Bean(name = "virtualThreadExecutor")
+    @Lazy
+    public Executor virtualThreadExecutor() {
+        // Java 21 — one lightweight virtual thread per task
+        // Only created when the first @Async or CompletableFuture task is submitted
+        return Executors.newVirtualThreadPerTaskExecutor();
+    }
+}</code></pre>
+  </div>
+</div>
+
+<div class="page-nav">
+  <span></span>
+  <a href="02-spring-mvc.html">02 · Spring MVC →</a>
+</div>
+</main>
+</div>
+<footer>Student Portal · Java 21 + Spring Boot 3.3.12</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+<script>
+const links = document.querySelectorAll('.sidebar-link');
+const topics = document.querySelectorAll('.topic');
+const obs = new IntersectionObserver(e => {
+  e.forEach(entry => {
+    if (entry.isIntersecting) {
+      links.forEach(l => l.classList.remove('active'));
+      const a = document.querySelector(`.sidebar-link[href="#${entry.target.id}"]`);
+      if (a) { a.classList.add('active'); a.scrollIntoView({block:'nearest'}); }
+    }
+  });
+}, {rootMargin:'-49px 0px -60% 0px'});
+topics.forEach(t => obs.observe(t));
+</script>
+</body>
+</html>
