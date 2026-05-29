@@ -1,7 +1,105 @@
+/Users/satyakaveti/Code/Workspace/Own/Java21StudentMarks
+Read Java21StudentMarks Project opened in Intellij, able to read ?
+
+-----------------------------------------------
+
+
+
 Java 21 + Spring Boot 4.0.6 — Final Upgrade Plan
 Target: Eclipse Temurin 21.0.10+9 (OpenJDK)  ·  Spring Boot 4.0.6  ·  Zero Licensing Cost
 
 only version bumps + the minimum code changes required because specific classes are literally removed/renamed.
 
-/Users/satyakaveti/Code/Workspace/Own/Java21StudentMarks
-Read Java21StudentMarks Project opened in Intellij, able to read ?
+
+
+i want tutorials for all topics involved in the project should be written inside docs folder
+docs/tutorials/java21
+docs/tutorials/sprongboot
+docs/tutorials/react-nextjs
+
+first can you write tutorials for java21 for all versions in the project plan with all topics covered one by one with 3 things
+1. High level overview
+2. one Simple, one medium, one real-time example
+3.How we are going to use in this project with simple example snippet
+
+
+Docs UI should have home page at docs/tutorials
+ each tutorail shoul have left side menu with Topics, right should content
+ docs/tutorials/java21
+ docs/tutorials/sprongboot
+ docs/tutorials/react-nextjs
+
+ possible ? tell me first , give me how you will implement ?
+
+Yes, fully possible. Here's exactly how I'll implement it:
+
+---
+
+**Structure**
+
+```
+docs/
+└── tutorials/
+    ├── index.html                  ← Home page (links to all 3 sections)
+    ├── java21/
+    │   └── index.html              ← Java 21 tutorial (all versions)
+    ├── springboot/
+    │   └── index.html              ← Spring Boot tutorial
+    └── react-nextjs/
+        └── index.html              ← React/Next.js tutorial
+```
+
+Each file is a **single self-contained HTML file** — no build tools, no npm, no server needed. Just open in browser.
+
+---
+
+**Each tutorial page layout**
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  Header: "Student Portal — Tutorials"                   │
+├──────────────────┬──────────────────────────────────────┤
+│  LEFT SIDEBAR    │  RIGHT CONTENT                       │
+│                  │                                      │
+│  Java 8          │  ## Java 8                           │
+│  ├ Lambdas       │  ### High Level Overview             │
+│  ├ Streams       │  ...                                 │
+│  ├ Optional      │  ### Examples                        │
+│  └ ...           │  Simple / Medium / Real-time         │
+│                  │  ### In This Project                 │
+│  Java 9          │  ```java code snippet```             │
+│  Java 10         │                                      │
+│  Java 11         │                                      │
+│  ...             │                                      │
+│  Java 21         │                                      │
+└──────────────────┴──────────────────────────────────────┘
+```
+
+---
+
+**Tech inside each HTML file**
+- **Tailwind CSS** (CDN) — styling
+- **Prism.js** (CDN) — syntax highlighting for Java code
+- **Vanilla JS** — sidebar click → scroll to section, active highlight, search filter
+- **No backend, no build** — pure static files, open directly or serve via any HTTP server
+
+---
+
+**Content coverage for `java21/index.html`**
+
+Every version from the project plan covered in order:
+Java 8 → 9 → 10 → 11 → 12-13 → 14-15 → 16-17 → 18-20 → 21
+
+Each topic has exactly the 3 things you asked:
+1. High level overview
+2. Simple + Medium + Real-time example
+3. How used in **this project** with code snippet
+
+---
+
+**Shall I start building `java21/index.html` first?**
+
+It'll be one complete file with all Java versions. Once you approve the approach I'll write it directly into your project via IntelliJ.
+
+
+

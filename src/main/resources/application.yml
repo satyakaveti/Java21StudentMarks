@@ -1,6 +1,6 @@
 spring:
   application:
-    name: student-results
+    name: student
 
   # ── Docker Compose auto-start (disable if Docker Desktop not running) ──
   docker:
@@ -21,6 +21,7 @@ spring:
 
   # ── JPA / Hibernate ────────────────────────────────────────────
   jpa:
+    open-in-view: false
     hibernate:
       ddl-auto: validate          # Flyway owns the schema; Hibernate validates only
     show-sql: false
@@ -54,10 +55,21 @@ spring:
       write-dates-as-timestamps: false
     default-property-inclusion: non_null
 
+# ── Springdoc / Swagger ────────────────────────────────────────
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    try-it-out-enabled: true
+    operations-sorter: method
+    disable-swagger-default-url: true
+  api-docs:
+    path: /v3/api-docs
+  packages-to-scan: com.studentresults.controller
+
 # ── Logging ──────────────────────────────────────────────────────
 logging:
   pattern:
-    console: "%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %5p %d{student-results} [%t] %logger{36} : %m%n"
+    console: "%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %5p [%t] %logger{36} : %m%n"
 
 # ── Server ───────────────────────────────────────────────────────
 server:

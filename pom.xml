@@ -20,11 +20,11 @@
          Project coordinates
     ============================================================ -->
     <groupId>com.studentresults</groupId>
-    <artifactId>student-results</artifactId>
+    <artifactId>student</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
-    <name>Student Results Portal</name>
-    <description>Java 21 + Spring Boot 3.3.12 Student Results Portal</description>
+    <name>Student Portal</name>
+    <description>Java 21 + Spring Boot 3.3.12 Student Portal</description>
 
     <!-- ============================================================
          Java 21
@@ -227,7 +227,7 @@
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-            <version>2.6.0</version>
+            <version>2.5.0</version>
         </dependency>
 
     </dependencies>

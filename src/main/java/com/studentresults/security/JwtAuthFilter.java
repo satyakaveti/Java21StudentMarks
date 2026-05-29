@@ -13,14 +13,14 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.List;
 
-/**
- * JWT authentication filter — runs once per request.
- * Extracts Bearer token from Authorization header, validates it,
- * and sets the authentication in the SecurityContext.
- */
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
+
+    private static final List<String> SKIP_PATHS = List.of(
+        "/swagger-ui", "/v3/api-docs", "/webjars", "/api/auth", "/actuator/health", "/actuator/info", "/error"
+    );
 
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
@@ -28,6 +28,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     public JwtAuthFilter(JwtService jwtService, UserDetailsService userDetailsService) {
         this.jwtService = jwtService;
         this.userDetailsService = userDetailsService;
+    }
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getServletPath();
+        return SKIP_PATHS.stream().anyMatch(path::startsWith);
     }
 
     @Override

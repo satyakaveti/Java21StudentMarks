@@ -27,10 +27,10 @@ public class StudentResultsApplication {
             String port = env.getProperty("server.port", "8080");
             System.out.println("""
                     ╔══════════════════════════════════════════════════════╗
-                    ║   Student Results Portal — started successfully      ║
+                    ║   Student Portal — started successfully              ║
                     ║                                                      ║
-                    ║   Swagger UI  →  http://localhost:%s/swagger-ui.html ║
-                    ║   API Docs    →  http://localhost:%s/v3/api-docs     ║
+                    ║   Swagger UI  →  http://localhost:%s/swagger-ui/index.html ║
+                    ║   API Docs    →  http://localhost:%s/v3/api-docs          ║
                     ╚══════════════════════════════════════════════════════╝
                     """.formatted(port, port));
         };

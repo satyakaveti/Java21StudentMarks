@@ -12,7 +12,7 @@ import java.net.URI;
  * Global exception handler — all errors return RFC 7807 ProblemDetail.
  * Spring Boot 3 ships ProblemDetail natively; no extra library needed.
  */
-@RestControllerAdvice
+@RestControllerAdvice(basePackages = "com.studentresults")
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(StudentNotFoundException.class)
