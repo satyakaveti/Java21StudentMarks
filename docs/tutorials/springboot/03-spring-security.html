@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Spring Security 6 — Student Portal</title>
+<link rel="stylesheet" href="gh.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css"/>
+</head>
+<body>
+<header class="gh-header">
+  <div class="gh-logo"><svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>Student Portal</div>
+  <span class="gh-breadcrumb"><a href="../index.html">tutorials</a> / <a href="index.html">springboot</a> / <span>spring-security</span></span>
+</header>
+<div class="layout">
+<nav class="sidebar">
+  <div class="sidebar-nav-header"><a href="index.html">← All Modules</a></div>
+  <div class="sidebar-section">Topics</div>
+  <a class="sidebar-link" href="#filterchain">SecurityFilterChain</a>
+  <a class="sidebar-link" href="#stateless">Stateless JWT Session</a>
+  <a class="sidebar-link" href="#jwtfilter">JwtAuthFilter</a>
+  <a class="sidebar-link" href="#jwtservice">JwtService</a>
+  <a class="sidebar-link" href="#bcrypt">BCryptPasswordEncoder</a>
+  <a class="sidebar-link" href="#preauthorize">@PreAuthorize</a>
+  <a class="sidebar-link" href="#postauthorize">@PostAuthorize</a>
+  <a class="sidebar-link" href="#methodsecurity">@EnableMethodSecurity</a>
+  <a class="sidebar-link" href="#oauth2">OAuth2 Google Login</a>
+  <a class="sidebar-link" href="#entrypoint">401 &amp; 403 Handlers</a>
+  <div class="sidebar-section">All Modules</div>
+  <div class="sidebar-modules">
+    <a class="mod-link" href="01-core-ioc-di.html">01 · Core IoC &amp; DI</a>
+    <a class="mod-link" href="02-spring-mvc.html">02 · Spring MVC</a>
+    <a class="mod-link current-mod" href="03-spring-security.html">03 · Security</a>
+    <a class="mod-link" href="04-spring-data-jpa.html">04 · Data JPA</a>
+    <a class="mod-link" href="05-spring-aop.html">05 · AOP</a>
+    <a class="mod-link" href="06-spring-cache.html">06 · Cache</a>
+    <a class="mod-link" href="07-spring-events.html">07 · Events</a>
+    <a class="mod-link" href="08-spring-scheduling.html">08 · Scheduling</a>
+    <a class="mod-link" href="09-spring-validation.html">09 · Validation</a>
+    <a class="mod-link" href="10-config-properties.html">10 · Config Properties</a>
+    <a class="mod-link" href="11-actuator-micrometer.html">11 · Actuator</a>
+    <a class="mod-link" href="12-testing.html">12 · Testing</a>
+    <a class="mod-link" href="13-virtual-threads-restclient.html">13 · Virtual Threads</a>
+  </div>
+</nav>
+<main class="main">
+<div class="ver-header">
+  <div class="ver-meta"><span class="badge badge-sec">Security</span><span style="font-size:0.875rem;color:#57606a">Spring Security 6 · Spring Boot 3.3.12</span></div>
+  <h1>Spring Security 6</h1>
+  <p>Stateless JWT authentication with two roles — STUDENT and ADMIN. Every request carries a Bearer token; the JwtAuthFilter validates it and populates the SecurityContext. Method-level security with <code>@PreAuthorize</code> ensures students can only see their own data.</p>
+</div>
+
+<!-- FILTERCHAIN -->
+<div class="topic" id="filterchain">
+  <div class="topic-title">SecurityFilterChain</div>
+  <div class="in-project-note">The entire security configuration lives in SecurityConfig.filterChain() — no more extending WebSecurityConfigurerAdapter (removed in Spring Security 6).</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>Spring Security 6 replaced the old <code>WebSecurityConfigurerAdapter</code> with a <code>SecurityFilterChain</code> bean. You declare a chain of filters, endpoint access rules, session policy, and pluggable components (JWT filter, OAuth2, etc.) all in one place using a fluent DSL. Multiple chains can exist with different <code>securityMatcher</code> paths.</p>
+  <div class="section-label"><span class="num">2</span> Examples</div>
+  <div class="examples">
+    <div class="example">
+      <div class="example-header"><span class="example-title">Minimal JWT filter chain</span><span class="ex-badge ex-simple">Simple</span></div>
+      <pre><code class="language-java">@Configuration
+@EnableWebSecurity
+public class SecurityConfig {
+
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        return http
+            .csrf(AbstractHttpConfigurer::disable)          // stateless API — no CSRF needed
+            .sessionManagement(s -> s
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/api/auth/**").permitAll() // login + register = public
+                .anyRequest().authenticated())               // everything else needs a token
+            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+            .build();
+    }
+}</code></pre>
+    </div>
+    <div class="example">
+      <div class="example-header"><span class="example-title">Full production filter chain</span><span class="ex-badge ex-realtime">Real-time</span></div>
+      <pre><code class="language-java">@Configuration
+@EnableWebSecurity
+@EnableMethodSecurity   // activates @PreAuthorize, @PostAuthorize
+public class SecurityConfig {
+
+    private final JwtAuthFilter jwtAuthFilter;
+    private final OAuth2AuthenticationSuccessHandler oAuth2SuccessHandler;
+
+    public SecurityConfig(JwtAuthFilter jwtAuthFilter,
+                          OAuth2AuthenticationSuccessHandler oAuth2SuccessHandler) {
+        this.jwtAuthFilter = jwtAuthFilter;
+        this.oAuth2SuccessHandler = oAuth2SuccessHandler;
+    }
+
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        return http
+            .csrf(AbstractHttpConfigurer::disable)
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            .sessionManagement(s -> s
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/actuator/health").permitAll()
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                .requestMatchers("/api/results/**").hasAnyRole("STUDENT", "ADMIN")
+                .anyRequest().authenticated())
+            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+            .oauth2Login(oauth2 -> oauth2
+                .successHandler(oAuth2SuccessHandler))
+            .exceptionHandling(ex -> ex
+                .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
+                .accessDeniedHandler(customAccessDeniedHandler()))
+            .build();
+    }
+}</code></pre>
+    </div>
+  </div>
+</div>
+
+<!-- STATELESS -->
+<div class="topic" id="stateless">
+  <div class="topic-title">Stateless JWT Session</div>
+  <div class="in-project-note">SessionCreationPolicy.STATELESS — no HttpSession, no cookies for auth. Every request must carry a Bearer token in the Authorization header.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>Traditional web apps store authentication in the server-side HTTP session. REST APIs are stateless — no session. Instead, the client includes a JWT (JSON Web Token) in every request header: <code>Authorization: Bearer &lt;token&gt;</code>. The server validates the token cryptographically, extracts the user, and authorises the request — no DB lookup needed for every request.</p>
+  <div class="section-label"><span class="num">2</span> Examples</div>
+  <div class="examples">
+    <div class="example">
+      <div class="example-header"><span class="example-title">Login flow — returns JWT</span><span class="ex-badge ex-medium">Medium</span></div>
+      <pre><code class="language-java">// POST /api/auth/login  { "username": "arjun", "password": "secret" }
+// Response: { "token": "eyJhbGci...", "expiresIn": 3600 }
+
+@PostMapping("/login")
+public ResponseEntity&lt;AuthResponse&gt; login(
+        @Valid @RequestBody LoginRequest request) {
+
+    // Throws BadCredentialsException if wrong password
+    var auth = authenticationManager.authenticate(
+        new UsernamePasswordAuthenticationToken(
+            request.username(), request.password()));
+
+    var user = (UserDetails) auth.getPrincipal();
+    var token = jwtService.generateToken(user);
+    return ResponseEntity.ok(new AuthResponse(token, 3600));
+}</code></pre>
+    </div>
+  </div>
+</div>
+
+<!-- JWTFILTER -->
+<div class="topic" id="jwtfilter">
+  <div class="topic-title">JwtAuthFilter</div>
+  <div class="in-project-note">Intercepts every request, extracts the Bearer token, validates it with JwtService, and populates SecurityContextHolder so @PreAuthorize and @AuthenticationPrincipal work.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p><code>OncePerRequestFilter</code> guarantees exactly one execution per request (vs once per dispatch). The JWT filter: reads the <code>Authorization</code> header → extracts the token → validates with <code>JwtService</code> → loads the user → sets <code>SecurityContextHolder</code>. If validation fails, it does nothing — the request proceeds unauthenticated and Spring Security's entry point returns 401.</p>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">security/JwtAuthFilter.java</div>
+    <pre><code class="language-java">@Component
+public class JwtAuthFilter extends OncePerRequestFilter {
+
+    private final JwtService jwtService;
+    private final UserDetailsService userDetailsService;
+
+    public JwtAuthFilter(JwtService jwtService,
+                         UserDetailsService userDetailsService) {
+        this.jwtService = jwtService;
+        this.userDetailsService = userDetailsService;
+    }
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest request,
+                                     HttpServletResponse response,
+                                     FilterChain filterChain)
+            throws ServletException, IOException {
+
+        final String authHeader = request.getHeader("Authorization");
+
+        // No token? Skip — let Spring Security handle as unauthenticated
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        final String jwt = authHeader.substring(7);
+        final String username = jwtService.extractUsername(jwt);
+
+        // Only set authentication if not already set and token is valid
+        if (username != null
+                && SecurityContextHolder.getContext().getAuthentication() == null) {
+            var userDetails = userDetailsService.loadUserByUsername(username);
+            if (jwtService.isTokenValid(jwt, userDetails)) {
+                var authToken = new UsernamePasswordAuthenticationToken(
+                    userDetails, null, userDetails.getAuthorities());
+                authToken.setDetails(
+                    new WebAuthenticationDetailsSource().buildDetails(request));
+                SecurityContextHolder.getContext().setAuthentication(authToken);
+            }
+        }
+        filterChain.doFilter(request, response);
+    }
+}</code></pre>
+  </div>
+</div>
+
+<!-- JWTSERVICE -->
+<div class="topic" id="jwtservice">
+  <div class="topic-title">JwtService</div>
+  <div class="in-project-note">Generates signed JWTs on login, validates them on every request, and extracts claims (username, roles, expiry).</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>A JWT has three base64-encoded parts: Header (algorithm), Payload (claims: sub, roles, exp, iat), and Signature (HMAC-SHA256 of header+payload using a secret key). <code>JwtService</code> uses the <code>io.jsonwebtoken</code> (jjwt) library to build, sign, parse, and validate tokens. The secret key comes from <code>AppProperties</code> (environment variable).</p>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">security/JwtService.java</div>
+    <pre><code class="language-java">@Service
+public class JwtService {
+
+    private final AppProperties appProperties;
+
+    public JwtService(AppProperties appProperties) {
+        this.appProperties = appProperties;
+    }
+
+    public String generateToken(UserDetails userDetails) {
+        var roles = userDetails.getAuthorities().stream()
+            .map(GrantedAuthority::getAuthority)
+            .toList();
+
+        return Jwts.builder()
+            .subject(userDetails.getUsername())
+            .claim("roles", roles)
+            .issuedAt(new Date())
+            .expiration(new Date(System.currentTimeMillis()
+                + appProperties.jwtExpirationMinutes() * 60_000L))
+            .signWith(getSigningKey())
+            .compact();
+    }
+
+    public String extractUsername(String token) {
+        return extractClaim(token, Claims::getSubject);
+    }
+
+    public boolean isTokenValid(String token, UserDetails userDetails) {
+        var username = extractUsername(token);
+        return username.equals(userDetails.getUsername()) && !isTokenExpired(token);
+    }
+
+    private boolean isTokenExpired(String token) {
+        return extractClaim(token, Claims::getExpiration).before(new Date());
+    }
+
+    private &lt;T&gt; T extractClaim(String token, Function&lt;Claims, T&gt; resolver) {
+        var claims = Jwts.parser()
+            .verifyWith(getSigningKey()).build()
+            .parseSignedClaims(token).getPayload();
+        return resolver.apply(claims);
+    }
+
+    private SecretKey getSigningKey() {
+        byte[] keyBytes = Decoders.BASE64.decode(appProperties.jwtSecret());
+        return Keys.hmacShaKeyFor(keyBytes);
+    }
+}</code></pre>
+  </div>
+</div>
+
+<!-- BCRYPT -->
+<div class="topic" id="bcrypt">
+  <div class="topic-title">BCryptPasswordEncoder</div>
+  <div class="in-project-note">Passwords are hashed with BCrypt strength 12 before saving. Never stored in plain text. Compared using encoder.matches() — never by string equality.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>BCrypt is a one-way adaptive hashing function. Each hash includes a random salt, making rainbow table attacks infeasible. Strength 12 means 2^12 = 4096 hashing rounds — slow enough to resist brute force, fast enough for login. Spring Security uses <code>DelegatingPasswordEncoder</code> by default which supports multiple encoders, but for new projects BCrypt is the standard choice.</p>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">config/SecurityConfig.java · service/AuthService.java</div>
+    <pre><code class="language-java">// Register as a bean
+@Bean
+public BCryptPasswordEncoder passwordEncoder() {
+    return new BCryptPasswordEncoder(12);  // strength 12 = 4096 rounds
+}
+
+// In AuthService — hash before saving
+public StudentDTO register(RegisterRequest request) {
+    var user = new User();
+    user.setUsername(request.username());
+    user.setPassword(passwordEncoder.encode(request.password())); // ✅ hashed
+    userRepository.save(user);
+    // ...
+}
+
+// Spring Security does this automatically during login:
+// passwordEncoder.matches(rawPassword, storedHash)</code></pre>
+  </div>
+</div>
+
+<!-- PREAUTHORIZE -->
+<div class="topic" id="preauthorize">
+  <div class="topic-title">@PreAuthorize</div>
+  <div class="in-project-note">Admin-only endpoints use hasRole('ADMIN'). Student endpoints use SpEL to verify the studentId in the path matches the logged-in student's own ID.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p><code>@PreAuthorize</code> runs a Spring Expression Language (SpEL) expression before the method executes. If the expression returns false, Spring throws <code>AccessDeniedException</code> (→ 403). You can check roles, permissions, and even method parameters — allowing resource-owner checks like "only the student whose ID matches can see this".</p>
+  <div class="section-label"><span class="num">2</span> Examples</div>
+  <div class="examples">
+    <div class="example">
+      <div class="example-header"><span class="example-title">Role check</span><span class="ex-badge ex-simple">Simple</span></div>
+      <pre><code class="language-java">@DeleteMapping("/students/{id}")
+@PreAuthorize("hasRole('ADMIN')")   // 403 if not ADMIN
+public void deleteStudent(@PathVariable Long id) {
+    studentService.softDeleteStudent(id);
+}
+
+@GetMapping("/students")
+@PreAuthorize("hasAnyRole('ADMIN', 'STUDENT')")
+public List&lt;StudentDTO&gt; list() { ... }</code></pre>
+    </div>
+    <div class="example">
+      <div class="example-header"><span class="example-title">Owner check — student sees only their own data</span><span class="ex-badge ex-medium">Medium</span></div>
+      <pre><code class="language-java">// #studentId refers to the method parameter
+// authentication.principal.id is the logged-in user's ID from the JWT
+@GetMapping("/students/{studentId}/results")
+@PreAuthorize("hasRole('ADMIN') or #studentId == authentication.principal.id")
+public List&lt;MarkDTO&gt; getResults(@PathVariable Long studentId) {
+    return resultService.getResults(studentId);
+}
+// ADMIN → always allowed
+// STUDENT → only allowed if their own ID matches the path variable</code></pre>
+    </div>
+  </div>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">service/ResultService.java · controller/AdminController.java</div>
+    <pre><code class="language-java">// Controller — entire admin controller requires ADMIN
+@RestController
+@RequestMapping("/api/admin")
+@PreAuthorize("hasRole('ADMIN')")
+public class AdminController { ... }
+
+// Service — fine-grained owner check
+@Service
+public class ResultService {
+
+    @PreAuthorize("hasRole('ADMIN') or #studentId == authentication.principal.studentId")
+    public List&lt;MarkDTO&gt; getResults(Long studentId) {
+        return markRepository.findByStudentId(studentId)
+            .stream().map(this::toDTO).toList();
+    }
+}</code></pre>
+  </div>
+</div>
+
+<!-- POSTAUTHORIZE -->
+<div class="topic" id="postauthorize">
+  <div class="topic-title">@PostAuthorize</div>
+  <div class="in-project-note">Used to filter response fields after the method returns — e.g. hiding the student's email from the response if the caller is not an ADMIN.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p><code>@PostAuthorize</code> runs after the method executes, with the return value available as <code>returnObject</code>. Use it when you need to check something on the result — like ensuring a returned student record belongs to the caller. Less common than <code>@PreAuthorize</code> but powerful for fine-grained field-level security.</p>
+  <div class="section-label"><span class="num">2</span> Examples</div>
+  <div class="examples">
+    <div class="example">
+      <div class="example-header"><span class="example-title">Verify returned object belongs to caller</span><span class="ex-badge ex-medium">Medium</span></div>
+      <pre><code class="language-java">@GetMapping("/students/{id}")
+@PostAuthorize("hasRole('ADMIN') or returnObject.username == authentication.name")
+public StudentDTO getStudent(@PathVariable Long id) {
+    return studentService.getStudentById(id);
+    // After method runs: if caller is STUDENT and returnObject.username != their name → 403
+}</code></pre>
+    </div>
+  </div>
+</div>
+
+<!-- METHOD SECURITY -->
+<div class="topic" id="methodsecurity">
+  <div class="topic-title">@EnableMethodSecurity</div>
+  <div class="in-project-note">Placed on SecurityConfig — activates @PreAuthorize and @PostAuthorize processing across all beans.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p><code>@EnableMethodSecurity</code> replaces the older <code>@EnableGlobalMethodSecurity</code>. It activates AOP-based interception for <code>@PreAuthorize</code>, <code>@PostAuthorize</code>, <code>@PreFilter</code>, <code>@PostFilter</code>, and JSR-250 annotations (<code>@RolesAllowed</code>). Without this annotation, all method-level security annotations are silently ignored.</p>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">config/SecurityConfig.java</div>
+    <pre><code class="language-java">@Configuration
+@EnableWebSecurity
+@EnableMethodSecurity   // ← required to activate @PreAuthorize / @PostAuthorize
+public class SecurityConfig {
+    // ...
+}</code></pre>
+  </div>
+</div>
+
+<!-- OAUTH2 -->
+<div class="topic" id="oauth2">
+  <div class="topic-title">OAuth2 Google Login</div>
+  <div class="in-project-note">Students can log in with Google as an alternative to username/password. On first Google login, a student account is auto-created and linked.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>Spring Security's OAuth2 client handles the entire Google login redirect flow. You configure client credentials in <code>application.yml</code>; Spring does the rest. A custom <code>OAuth2AuthenticationSuccessHandler</code> fires after successful Google auth to create or link a local student account and issue a JWT — so the frontend still gets a Bearer token regardless of login method.</p>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">security/OAuth2AuthenticationSuccessHandler.java</div>
+    <pre><code class="language-java">@Component
+public class OAuth2AuthenticationSuccessHandler
+        extends SimpleUrlAuthenticationSuccessHandler {
+
+    private final UserRepository userRepository;
+    private final JwtService jwtService;
+
+    public OAuth2AuthenticationSuccessHandler(UserRepository userRepository,
+                                               JwtService jwtService) {
+        this.userRepository = userRepository;
+        this.jwtService = jwtService;
+    }
+
+    @Override
+    public void onAuthenticationSuccess(HttpServletRequest request,
+                                         HttpServletResponse response,
+                                         Authentication authentication)
+            throws IOException {
+        var oauth2User = (OAuth2User) authentication.getPrincipal();
+        var email = oauth2User.getAttribute("email").toString();
+        var name  = oauth2User.getAttribute("name").toString();
+
+        // Create account on first login
+        var user = userRepository.findByEmail(email)
+            .orElseGet(() -> userRepository.save(
+                User.builder().email(email).name(name)
+                    .role(Role.STUDENT).build()));
+
+        // Issue JWT — same as username/password login
+        var token = jwtService.generateToken(user);
+
+        // Redirect to frontend with token
+        getRedirectStrategy().sendRedirect(request, response,
+            "http://localhost:3000/auth/callback?token=" + token);
+    }
+}</code></pre>
+  </div>
+</div>
+
+<!-- ENTRYPOINT -->
+<div class="topic" id="entrypoint">
+  <div class="topic-title">401 &amp; 403 Handlers</div>
+  <div class="in-project-note">Returns clean JSON 401/403 ProblemDetail responses instead of Spring Security's default HTML error pages — essential for a REST API consumed by a JS frontend.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p><code>AuthenticationEntryPoint</code> fires when an unauthenticated request reaches a protected endpoint (missing or invalid token → 401). <code>AccessDeniedHandler</code> fires when an authenticated user lacks permission (wrong role → 403). By default, Spring Security returns HTML — for REST APIs, override both to return <code>ProblemDetail</code> JSON.</p>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">config/SecurityConfig.java — exception handling</div>
+    <pre><code class="language-java">@Bean
+public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    return http
+        // ... other config ...
+        .exceptionHandling(ex -> ex
+            // 401 — no token or invalid token
+            .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
+            // 403 — authenticated but wrong role
+            .accessDeniedHandler(customAccessDeniedHandler()))
+        .build();
+}
+
+@Bean
+public AccessDeniedHandler customAccessDeniedHandler() {
+    return (request, response, ex) -> {
+        response.setStatus(HttpStatus.FORBIDDEN.value());
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        var problem = ProblemDetail.forStatusAndDetail(
+            HttpStatus.FORBIDDEN, "You do not have permission to access this resource");
+        problem.setTitle("Forbidden");
+        new ObjectMapper().writeValue(response.getWriter(), problem);
+    };
+}</code></pre>
+  </div>
+</div>
+
+<div class="page-nav">
+  <a href="02-spring-mvc.html">← 02 · Spring MVC</a>
+  <a href="04-spring-data-jpa.html">04 · Data JPA →</a>
+</div>
+</main>
+</div>
+<footer>Student Portal · Java 21 + Spring Boot 3.3.12</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+<script>
+const links = document.querySelectorAll('.sidebar-link');
+const topics = document.querySelectorAll('.topic');
+const obs = new IntersectionObserver(e => {
+  e.forEach(entry => {
+    if (entry.isIntersecting) {
+      links.forEach(l => l.classList.remove('active'));
+      const a = document.querySelector(`.sidebar-link[href="#${entry.target.id}"]`);
+      if (a) { a.classList.add('active'); a.scrollIntoView({block:'nearest'}); }
+    }
+  });
+}, {rootMargin:'-49px 0px -60% 0px'});
+topics.forEach(t => obs.observe(t));
+</script>
+</body>
+</html>
