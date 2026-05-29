@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Spring Boot Testing — Student Portal</title>
+<link rel="stylesheet" href="gh.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css"/>
+</head>
+<body>
+<header class="gh-header">
+  <div class="gh-logo"><svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>Student Portal</div>
+  <span class="gh-breadcrumb"><a href="../index.html">tutorials</a> / <a href="index.html">springboot</a> / <span>testing</span></span>
+</header>
+<div class="layout">
+<nav class="sidebar">
+  <div class="sidebar-nav-header"><a href="index.html">← All Modules</a></div>
+  <div class="sidebar-section">Topics</div>
+  <a class="sidebar-link" href="#pyramid">Test Pyramid</a>
+  <a class="sidebar-link" href="#springboottest">@SpringBootTest</a>
+  <a class="sidebar-link" href="#webmvctest">@WebMvcTest</a>
+  <a class="sidebar-link" href="#datajpatest">@DataJpaTest</a>
+  <a class="sidebar-link" href="#testcontainers">@Testcontainers</a>
+  <a class="sidebar-link" href="#serviceconnection">@ServiceConnection</a>
+  <a class="sidebar-link" href="#mockmvc">MockMvc</a>
+  <a class="sidebar-link" href="#withmockuser">@WithMockUser</a>
+  <a class="sidebar-link" href="#mockbean">@MockBean</a>
+  <a class="sidebar-link" href="#parameterized">@ParameterizedTest</a>
+  <div class="sidebar-section">All Modules</div>
+  <div class="sidebar-modules">
+    <a class="mod-link" href="01-core-ioc-di.html">01 · Core IoC &amp; DI</a>
+    <a class="mod-link" href="02-spring-mvc.html">02 · Spring MVC</a>
+    <a class="mod-link" href="03-spring-security.html">03 · Security</a>
+    <a class="mod-link" href="04-spring-data-jpa.html">04 · Data JPA</a>
+    <a class="mod-link" href="05-spring-aop.html">05 · AOP</a>
+    <a class="mod-link" href="06-spring-cache.html">06 · Cache</a>
+    <a class="mod-link" href="07-spring-events.html">07 · Events</a>
+    <a class="mod-link" href="08-spring-scheduling.html">08 · Scheduling</a>
+    <a class="mod-link" href="09-spring-validation.html">09 · Validation</a>
+    <a class="mod-link" href="10-config-properties.html">10 · Config Properties</a>
+    <a class="mod-link" href="11-actuator-micrometer.html">11 · Actuator</a>
+    <a class="mod-link current-mod" href="12-testing.html">12 · Testing</a>
+    <a class="mod-link" href="13-virtual-threads-restclient.html">13 · Virtual Threads</a>
+  </div>
+</nav>
+<main class="main">
+<div class="ver-header">
+  <div class="ver-meta"><span class="badge badge-data">Testing</span><span style="font-size:0.875rem;color:#57606a">JUnit 5 · Testcontainers · MockMvc · Spring Boot 3.3.12</span></div>
+  <h1>Spring Boot Testing</h1>
+  <p>Three test types cover the whole stack: <code>@SpringBootTest</code> for full integration tests with a real PostgreSQL container, <code>@WebMvcTest</code> for controller slice tests (no DB), and <code>@DataJpaTest</code> for repository slice tests. Spring Boot 3.1's <code>@ServiceConnection</code> removes all boilerplate from Testcontainers setup.</p>
+</div>
+
+<!-- PYRAMID -->
+<div class="topic" id="pyramid">
+  <div class="topic-title">Test Pyramid</div>
+  <div class="in-project-note">This project has all three layers: unit tests (plain JUnit, no Spring), slice tests (@WebMvcTest, @DataJpaTest), and full integration tests (@SpringBootTest + Testcontainers).</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <table>
+    <tr><th>Type</th><th>Annotation</th><th>What starts</th><th>Speed</th><th>Use for</th></tr>
+    <tr><td>Unit</td><td>None (plain JUnit)</td><td>Nothing</td><td>Fastest</td><td>Service logic, validators, utilities</td></tr>
+    <tr><td>Controller slice</td><td><code>@WebMvcTest</code></td><td>MVC layer only</td><td>Fast</td><td>HTTP mapping, validation, security rules</td></tr>
+    <tr><td>Repository slice</td><td><code>@DataJpaTest</code></td><td>JPA + in-memory DB</td><td>Medium</td><td>Custom queries, derived methods</td></tr>
+    <tr><td>Integration</td><td><code>@SpringBootTest</code></td><td>Full context + real DB</td><td>Slow</td><td>End-to-end flow, auth chain, events</td></tr>
+  </table>
+</div>
+
+<!-- SPRINGBOOTTEST -->
+<div class="topic" id="springboottest">
+  <div class="topic-title">@SpringBootTest</div>
+  <div class="in-project-note">StudentResultsIntegrationTest starts the full app on a random port with a real PostgreSQL container — tests the complete HTTP→Service→DB→Response chain.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p><code>@SpringBootTest(webEnvironment = RANDOM_PORT)</code> starts the full Spring application context on a random free port. Use <code>TestRestTemplate</code> or <code>WebTestClient</code> to make real HTTP calls. Every layer — security, validation, cache, events, DB — is active. Expensive to start but tests real behaviour.</p>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">test/integration/StudentResultsIntegrationTest.java</div>
+    <pre><code class="language-java">@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@Testcontainers
+@ActiveProfiles("test")
+class StudentResultsIntegrationTest {
+
+    @Container
+    @ServiceConnection  // Boot 3.1 — zero-config wiring, no @DynamicPropertySource needed
+    static PostgreSQLContainer&lt;?&gt; postgres =
+        new PostgreSQLContainer&lt;&gt;("postgres:16-alpine");
+
+    @Container
+    @ServiceConnection
+    static GenericContainer&lt;?&gt; redis =
+        new GenericContainer&lt;&gt;("redis:7-alpine").withExposedPorts(6379);
+
+    @Autowired
+    private TestRestTemplate restTemplate;
+
+    @Autowired
+    private StudentRepository studentRepository;
+
+    @Test
+    void fullFlowTest_adminCreatesStudent_studentViewsResults() {
+        // 1. Login as admin
+        var loginResp = restTemplate.postForEntity("/api/auth/login",
+            new LoginRequest("admin", "password"), AuthResponse.class);
+        assertThat(loginResp.getStatusCode()).isEqualTo(HttpStatus.OK);
+        var token = loginResp.getBody().token();
+
+        // 2. Admin creates student
+        var headers = new HttpHeaders();
+        headers.setBearerAuth(token);
+        var createResp = restTemplate.exchange(
+            "/api/admin/students",
+            HttpMethod.POST,
+            new HttpEntity&lt;&gt;(new CreateStudentRequest("S001","Arjun","a@s.com"), headers),
+            StudentDTO.class);
+        assertThat(createResp.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        var studentId = createResp.getBody().id();
+
+        // 3. Admin enters marks
+        restTemplate.exchange(
+            "/api/admin/students/" + studentId + "/marks",
+            HttpMethod.POST,
+            new HttpEntity&lt;&gt;(new CreateMarkRequest(1L, 87, LocalDate.now()), headers),
+            MarkDTO.class);
+
+        // 4. Student logs in and views results
+        var studentLogin = restTemplate.postForEntity("/api/auth/login",
+            new LoginRequest("S001", "password"), AuthResponse.class);
+        var studentToken = studentLogin.getBody().token();
+
+        var studentHeaders = new HttpHeaders();
+        studentHeaders.setBearerAuth(studentToken);
+        var resultsResp = restTemplate.exchange(
+            "/api/results/me", HttpMethod.GET,
+            new HttpEntity&lt;&gt;(studentHeaders),
+            new ParameterizedTypeReference&lt;List&lt;MarkDTO&gt;&gt;() {});
+
+        assertThat(resultsResp.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(resultsResp.getBody()).hasSize(1);
+        assertThat(resultsResp.getBody().get(0).score()).isEqualTo(87);
+    }
+}</code></pre>
+  </div>
+</div>
+
+<!-- WEBMVCTEST -->
+<div class="topic" id="webmvctest">
+  <div class="topic-title">@WebMvcTest</div>
+  <div class="in-project-note">StudentControllerTest and AdminControllerTest use @WebMvcTest — loads only the MVC layer, mocks the service with @MockBean, fast to run.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p><code>@WebMvcTest(MyController.class)</code> loads only the Spring MVC layer: controllers, filters, advice, converters. No service beans, no JPA, no Redis. Use <code>@MockBean</code> to stub service layer. Tests HTTP mappings, request validation, response codes, JSON serialisation, and security rules — without touching the DB.</p>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">test/controller/AdminControllerTest.java</div>
+    <pre><code class="language-java">@WebMvcTest(AdminController.class)
+@ActiveProfiles("test")
+class AdminControllerTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @MockBean
+    private StudentService studentService;   // mocked — no real DB
+
+    @MockBean
+    private ResultService resultService;
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void createStudent_validRequest_returns201() throws Exception {
+        var request = new CreateStudentRequest("S001", "Arjun Kumar", "arjun@school.com");
+        var response = new StudentDTO(1L, "Arjun Kumar", "S001", "arjun@school.com");
+
+        when(studentService.createStudent(request)).thenReturn(response);
+
+        mockMvc.perform(post("/api/admin/students")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.id").value(1))
+            .andExpect(jsonPath("$.name").value("Arjun Kumar"))
+            .andExpect(jsonPath("$.rollNumber").value("S001"));
+    }
+
+    @Test
+    @WithMockUser(roles = "STUDENT")   // wrong role
+    void createStudent_asStudent_returns403() throws Exception {
+        mockMvc.perform(post("/api/admin/students")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void createStudent_blankName_returns400WithFieldError() throws Exception {
+        var badRequest = new CreateStudentRequest("S001", "", "arjun@school.com");
+
+        mockMvc.perform(post("/api/admin/students")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(badRequest)))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.title").value("Validation Failed"))
+            .andExpect(jsonPath("$.errors.name").exists());
+    }
+}</code></pre>
+  </div>
+</div>
+
+<!-- DATAJPATEST -->
+<div class="topic" id="datajpatest">
+  <div class="topic-title">@DataJpaTest</div>
+  <div class="in-project-note">MarkRepositoryTest uses @DataJpaTest — starts only JPA context with real SQL (via Testcontainers), tests custom @Query methods and derived queries against real PostgreSQL.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p><code>@DataJpaTest</code> loads only the JPA slice: entities, repositories, Flyway migrations. No web layer, no services. By default uses an in-memory H2 database. For PostgreSQL-specific queries (native SQL, ILIKE, JSONB), replace H2 with Testcontainers via <code>@AutoConfigureTestDatabase(replace = NONE)</code>.</p>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">test/repository/MarkRepositoryTest.java</div>
+    <pre><code class="language-java">@DataJpaTest
+@Testcontainers
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+class MarkRepositoryTest {
+
+    @Container
+    @ServiceConnection
+    static PostgreSQLContainer&lt;?&gt; postgres =
+        new PostgreSQLContainer&lt;&gt;("postgres:16-alpine");
+
+    @Autowired
+    private MarkRepository markRepository;
+
+    @Autowired
+    private StudentRepository studentRepository;
+
+    @Test
+    @Transactional
+    void findByStudentId_returnsOnlyThatStudentsMarks() {
+        var student = studentRepository.save(
+            new Student("S001", "Arjun", "arjun@test.com"));
+        markRepository.save(new Mark(student, mathsSubject, 87));
+        markRepository.save(new Mark(student, scienceSubject, 72));
+
+        var marks = markRepository.findByStudentId(student.getId());
+
+        assertThat(marks).hasSize(2);
+        assertThat(marks).extracting(Mark::getScore)
+            .containsExactlyInAnyOrder(87, 72);
+    }
+
+    @Test
+    void findAveragesByStudentId_correctAveragePerSubject() {
+        // ... setup test data ...
+        var averages = markRepository.findAveragesByStudentId(studentId);
+
+        assertThat(averages)
+            .anySatisfy(row -> {
+                assertThat(row[0]).isEqualTo("MATHS");
+                assertThat((Double) row[1]).isCloseTo(79.5, offset(0.1));
+            });
+    }
+}</code></pre>
+  </div>
+</div>
+
+<!-- TESTCONTAINERS -->
+<div class="topic" id="testcontainers">
+  <div class="topic-title">@Testcontainers</div>
+  <div class="in-project-note">PostgreSQLContainer and Redis GenericContainer start real Docker containers for tests — no mocking, no H2 compatibility issues, real PostgreSQL 16 behaviour.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>Testcontainers starts real Docker containers in tests. <code>@Testcontainers</code> on the class activates lifecycle management. <code>@Container</code> on a field manages container start/stop. <code>static</code> containers are shared across all tests in the class (faster). Spring Boot 3.1's <code>@ServiceConnection</code> auto-wires the container's host/port into the datasource — no manual <code>@DynamicPropertySource</code> needed.</p>
+  <div class="section-label"><span class="num">2</span> Examples</div>
+  <div class="examples">
+    <div class="example">
+      <div class="example-header"><span class="example-title">Before Boot 3.1 (DynamicPropertySource)</span><span class="ex-badge ex-simple">Simple</span></div>
+      <pre><code class="language-java">// Old way — manual URL override
+@Testcontainers
+class OldStyleTest {
+    @Container
+    static PostgreSQLContainer&lt;?&gt; postgres =
+        new PostgreSQLContainer&lt;&gt;("postgres:16-alpine");
+
+    @DynamicPropertySource
+    static void props(DynamicPropertyRegistry registry) {
+        registry.add("spring.datasource.url",      postgres::getJdbcUrl);
+        registry.add("spring.datasource.username", postgres::getUsername);
+        registry.add("spring.datasource.password", postgres::getPassword);
+    }
+}</code></pre>
+      </div>
+    <div class="example">
+      <div class="example-header"><span class="example-title">Boot 3.1+ — @ServiceConnection (zero config)</span><span class="ex-badge ex-medium">Medium</span></div>
+      <pre><code class="language-java">// New way — @ServiceConnection handles everything
+@Testcontainers
+class NewStyleTest {
+    @Container
+    @ServiceConnection   // ← Boot 3.1 — auto-wires datasource URL/credentials
+    static PostgreSQLContainer&lt;?&gt; postgres =
+        new PostgreSQLContainer&lt;&gt;("postgres:16-alpine");
+
+    // No @DynamicPropertySource needed!
+    // Spring reads the container's actual port and sets spring.datasource.* automatically
+}</code></pre>
+      </div>
+    </div>
+</div>
+
+<!-- @SERVICECONNECTION -->
+<div class="topic" id="serviceconnection">
+  <div class="topic-title">@ServiceConnection (Spring Boot 3.1)</div>
+  <div class="in-project-note">@ServiceConnection on PostgreSQLContainer and Redis GenericContainer auto-configures datasource and Redis connection — zero manual URL setup.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>Spring Boot 3.1 introduced <code>@ServiceConnection</code> — a declarative way to wire Testcontainers into Spring's auto-configuration. Works for PostgreSQL, MySQL, Redis, RabbitMQ, Kafka, MongoDB, and more. Spring detects the container type, reads its connection details after startup, and populates the appropriate <code>spring.*</code> properties. Completely eliminates boilerplate.</p>
+</div>
+
+<!-- MOCKMVC -->
+<div class="topic" id="mockmvc">
+  <div class="topic-title">MockMvc</div>
+  <div class="in-project-note">Used in @WebMvcTest — performs fake HTTP requests in-process, asserts status codes, response body JSON paths, and headers without starting a real server.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p><code>MockMvc</code> simulates HTTP calls through Spring's DispatcherServlet without starting a real server. The full MVC pipeline runs: filters, interceptors, controller, argument resolution, message conversion, exception handlers. Much faster than <code>TestRestTemplate</code> (no real TCP). Fluent API: <code>perform()</code> → <code>andExpect()</code> → <code>andReturn()</code>.</p>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">test/controller/ResultControllerTest.java</div>
+    <pre><code class="language-java">@Test
+@WithMockUser(username = "arjun", roles = "STUDENT")
+void getMyResults_authenticated_returns200WithMarks() throws Exception {
+    var marks = List.of(
+        new MarkDTO(1L, "MATHS",   87, "A", true),
+        new MarkDTO(2L, "SCIENCE", 72, "B", true),
+        new MarkDTO(3L, "ENGLISH", 45, "C", true)
+    );
+    when(resultService.getResultsForUser("arjun")).thenReturn(marks);
+
+    mockMvc.perform(get("/api/results/me")
+            .header("Authorization", "Bearer test-token"))
+        .andExpect(status().isOk())
+        .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+        .andExpect(jsonPath("$").isArray())
+        .andExpect(jsonPath("$.length()").value(3))
+        .andExpect(jsonPath("$[0].subjectName").value("MATHS"))
+        .andExpect(jsonPath("$[0].score").value(87))
+        .andExpect(jsonPath("$[0].grade").value("A"))
+        .andDo(print());  // prints request+response to console for debugging
+}
+
+@Test
+void getMyResults_unauthenticated_returns401() throws Exception {
+    mockMvc.perform(get("/api/results/me"))
+        .andExpect(status().isUnauthorized());
+}</code></pre>
+  </div>
+</div>
+
+<!-- WITHMOCKUSER -->
+<div class="topic" id="withmockuser">
+  <div class="topic-title">@WithMockUser</div>
+  <div class="in-project-note">Sets up a fake authenticated user in the SecurityContext for the test — no real JWT needed. Test STUDENT access, ADMIN access, and unauthenticated access in the same test class.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p><code>@WithMockUser</code> injects a fake <code>Authentication</code> into the <code>SecurityContextHolder</code> for the duration of the test. Specify <code>username</code>, <code>roles</code>, or <code>authorities</code>. For testing <code>@PreAuthorize</code> expressions that reference <code>authentication.principal.id</code>, create a custom <code>@WithMockUser</code> using <code>@WithSecurityContext</code>.</p>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">test/controller/AdminControllerTest.java</div>
+    <pre><code class="language-java">// Test role-based access — same endpoint, three different security contexts
+@Test
+@WithMockUser(roles = "ADMIN")
+void deleteStudent_asAdmin_returns204() throws Exception {
+    mockMvc.perform(delete("/api/admin/students/1"))
+        .andExpect(status().isNoContent());
+}
+
+@Test
+@WithMockUser(roles = "STUDENT")
+void deleteStudent_asStudent_returns403() throws Exception {
+    mockMvc.perform(delete("/api/admin/students/1"))
+        .andExpect(status().isForbidden());
+}
+
+@Test
+void deleteStudent_unauthenticated_returns401() throws Exception {
+    mockMvc.perform(delete("/api/admin/students/1"))
+        .andExpect(status().isUnauthorized());
+}</code></pre>
+  </div>
+</div>
+
+<!-- MOCKBEAN -->
+<div class="topic" id="mockbean">
+  <div class="topic-title">@MockBean</div>
+  <div class="in-project-note">@MockBean replaces the real StudentService and ResultService with Mockito mocks in controller tests — tests the controller in isolation from business logic.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p><code>@MockBean</code> creates a Mockito mock and registers it in the Spring context, replacing any existing bean of that type. When you <code>when(mock.method()).thenReturn(value)</code>, the controller gets the stub. After each test, the mock is reset. Use <code>@SpyBean</code> to wrap a real bean and only stub specific methods.</p>
+</div>
+
+<!-- PARAMETERIZED -->
+<div class="topic" id="parameterized">
+  <div class="topic-title">@ParameterizedTest</div>
+  <div class="in-project-note">Grade boundary tests use @ParameterizedTest + @CsvSource — tests all 8 grade thresholds (0, 34, 35, 49, 50, 74, 75, 100) in one compact test method.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p><code>@ParameterizedTest</code> runs the test multiple times with different inputs. <code>@CsvSource</code> is the most readable source for simple value + expected pairs. Also available: <code>@ValueSource</code>, <code>@MethodSource</code>, <code>@EnumSource</code>, <code>@CsvFileSource</code>. Each invocation is reported separately in test results.</p>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">test/service/GradeCalculatorTest.java</div>
+    <pre><code class="language-java">class GradeCalculatorTest {
+
+    private final GradeCalculator calculator = new GradeCalculator();
+
+    @ParameterizedTest(name = "score={0} → grade={1}, passed={2}")
+    @CsvSource({
+        //  score, grade, passed
+        "  0,       F,    false",
+        " 34,       F,    false",
+        " 35,       C,    true",
+        " 49,       C,    true",
+        " 50,       B,    true",
+        " 74,       B,    true",
+        " 75,       A,    true",
+        "100,       A,    true"
+    })
+    void gradeCalculation(int score, String expectedGrade, boolean expectedPassed) {
+        var result = calculator.calculate(score);
+        assertThat(result.grade()).isEqualTo(expectedGrade);
+        assertThat(result.passed()).isEqualTo(expectedPassed);
+    }
+}
+
+// Test output:
+// gradeCalculation(int, String, boolean)
+//   ✓ score=0   → grade=F, passed=false
+//   ✓ score=34  → grade=F, passed=false
+//   ✓ score=35  → grade=C, passed=true
+//   ✓ score=49  → grade=C, passed=true
+//   ✓ score=50  → grade=B, passed=true
+//   ✓ score=74  → grade=B, passed=true
+//   ✓ score=75  → grade=A, passed=true
+//   ✓ score=100 → grade=A, passed=true</code></pre>
+  </div>
+</div>
+
+<div class="page-nav">
+  <a href="11-actuator-micrometer.html">← 11 · Actuator</a>
+  <a href="13-virtual-threads-restclient.html">13 · Virtual Threads →</a>
+</div>
+</main>
+</div>
+<footer>Student Portal · Java 21 + Spring Boot 3.3.12</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+<script>
+const links = document.querySelectorAll('.sidebar-link');
+const topics = document.querySelectorAll('.topic');
+const obs = new IntersectionObserver(e => {
+  e.forEach(entry => {
+    if (entry.isIntersecting) {
+      links.forEach(l => l.classList.remove('active'));
+      const a = document.querySelector(`.sidebar-link[href="#${entry.target.id}"]`);
+      if (a) { a.classList.add('active'); a.scrollIntoView({block:'nearest'}); }
+    }
+  });
+}, {rootMargin:'-49px 0px -60% 0px'});
+topics.forEach(t => obs.observe(t));
+</script>
+</body>
+</html>

@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Configuration Properties — Student Portal</title>
+<link rel="stylesheet" href="gh.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css"/>
+</head>
+<body>
+<header class="gh-header">
+  <div class="gh-logo"><svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>Student Portal</div>
+  <span class="gh-breadcrumb"><a href="../index.html">tutorials</a> / <a href="index.html">springboot</a> / <span>config-properties</span></span>
+</header>
+<div class="layout">
+<nav class="sidebar">
+  <div class="sidebar-nav-header"><a href="index.html">← All Modules</a></div>
+  <div class="sidebar-section">Topics</div>
+  <a class="sidebar-link" href="#configprops">@ConfigurationProperties</a>
+  <a class="sidebar-link" href="#record">Properties as Record</a>
+  <a class="sidebar-link" href="#validated">@Validated on Properties</a>
+  <a class="sidebar-link" href="#nested">Nested Records + YML</a>
+  <a class="sidebar-link" href="#profiles">Profile-Specific YML</a>
+  <a class="sidebar-link" href="#secrets">Environment Secrets</a>
+  <div class="sidebar-section">All Modules</div>
+  <div class="sidebar-modules">
+    <a class="mod-link" href="01-core-ioc-di.html">01 · Core IoC &amp; DI</a>
+    <a class="mod-link" href="02-spring-mvc.html">02 · Spring MVC</a>
+    <a class="mod-link" href="03-spring-security.html">03 · Security</a>
+    <a class="mod-link" href="04-spring-data-jpa.html">04 · Data JPA</a>
+    <a class="mod-link" href="05-spring-aop.html">05 · AOP</a>
+    <a class="mod-link" href="06-spring-cache.html">06 · Cache</a>
+    <a class="mod-link" href="07-spring-events.html">07 · Events</a>
+    <a class="mod-link" href="08-spring-scheduling.html">08 · Scheduling</a>
+    <a class="mod-link" href="09-spring-validation.html">09 · Validation</a>
+    <a class="mod-link current-mod" href="10-config-properties.html">10 · Config Properties</a>
+    <a class="mod-link" href="11-actuator-micrometer.html">11 · Actuator</a>
+    <a class="mod-link" href="12-testing.html">12 · Testing</a>
+    <a class="mod-link" href="13-virtual-threads-restclient.html">13 · Virtual Threads</a>
+  </div>
+</nav>
+<main class="main">
+<div class="ver-header">
+  <div class="ver-meta"><span class="badge badge-core">Config</span><span style="font-size:0.875rem;color:#57606a">Spring Boot 3.3.12</span></div>
+  <h1>Configuration Properties</h1>
+  <p>Instead of scattering <code>@Value("${...}")</code> annotations across 20 classes, this project uses a single <code>AppProperties</code> record that maps the entire <code>app.*</code> config namespace. Typed, validated, IDE-completable, and testable by just constructing a record.</p>
+</div>
+
+<!-- @CONFIGURATIONPROPERTIES -->
+<div class="topic" id="configprops">
+  <div class="topic-title">@ConfigurationProperties</div>
+  <div class="in-project-note">AppProperties maps the entire app.* namespace — JWT secret, email config, storage config. Injected wherever needed via constructor injection like any other bean.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p><code>@ConfigurationProperties(prefix = "app")</code> binds all YAML/properties keys under <code>app.*</code> to the annotated class. Spring Boot uses relaxed binding: <code>app.jwt-secret</code>, <code>app.jwtSecret</code>, and <code>APP_JWT_SECRET</code> (env var) all map to the same field. Benefits over <code>@Value</code>: type safety, IDE autocompletion, grouped validation, and easy testing.</p>
+  <div class="section-label"><span class="num">2</span> Examples</div>
+  <div class="examples">
+    <div class="example">
+      <div class="example-header"><span class="example-title">@Value vs @ConfigurationProperties</span><span class="ex-badge ex-simple">Simple</span></div>
+      <pre><code class="language-java">// ❌ @Value — scattered, no type safety, hard to test
+@Service
+public class JwtService {
+    @Value("${app.jwt-secret}")             private String jwtSecret;
+    @Value("${app.jwt-expiration-minutes}") private int    expirationMinutes;
+}
+@Service
+public class EmailService {
+    @Value("${app.email.host}") private String host;
+    @Value("${app.email.port}") private int    port;
+    @Value("${app.email.from}") private String from;
+}
+
+// ✅ @ConfigurationProperties — one place, typed, injected
+@Service
+public class JwtService {
+    private final AppProperties props;
+    public JwtService(AppProperties props) { this.props = props; }
+    // Use: props.jwtSecret(), props.jwtExpirationMinutes()
+}
+@Service
+public class EmailService {
+    private final AppProperties props;
+    public EmailService(AppProperties props) { this.props = props; }
+    // Use: props.email().host(), props.email().port()
+}</code></pre>
+    </div>
+    <div class="example">
+      <div class="example-header"><span class="example-title">Enable in configuration</span><span class="ex-badge ex-medium">Medium</span></div>
+      <pre><code class="language-java">// Option A — on the record itself (Boot 3.x preferred)
+@ConfigurationProperties(prefix = "app")
+@Validated
+public record AppProperties(...) {}
+
+// Then enable via:
+@SpringBootApplication
+@EnableConfigurationProperties(AppProperties.class)
+public class StudentPortalApplication { ... }
+
+// Option B — @ConfigurationPropertiesScan (scans the package)
+@SpringBootApplication
+@ConfigurationPropertiesScan("com.studentresults.properties")
+public class StudentPortalApplication { ... }</code></pre>
+    </div>
+  </div>
+</div>
+
+<!-- RECORD -->
+<div class="topic" id="record">
+  <div class="topic-title">Properties as a Java Record</div>
+  <div class="in-project-note">AppProperties is a record — immutable config, no boilerplate setters, IDE-completable via spring-boot-configuration-processor on the classpath.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>Spring Boot 3.x supports <code>@ConfigurationProperties</code> on Java records via constructor binding. Records are ideal: immutable (config shouldn't change at runtime), compact (no getters/setters), naturally support nested records for sub-config groups, and work with <code>@Validated</code> for startup-time validation.</p>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">properties/AppProperties.java</div>
+    <pre><code class="language-java">@ConfigurationProperties(prefix = "app")
+@Validated
+public record AppProperties(
+
+    @NotBlank
+    String jwtSecret,
+
+    @Min(1) @Max(1440)
+    int jwtExpirationMinutes,
+
+    boolean cacheEnabled,
+
+    Email   email,    // nested record — maps app.email.*
+    Storage storage,  // nested record — maps app.storage.*
+    Digest  digest    // nested record — maps app.digest.*
+
+) {
+    public record Email(
+        @NotBlank String host,
+        @Min(1) @Max(65535) int port,
+        @NotBlank String from,
+        String username,
+        String password
+    ) {}
+
+    public record Storage(
+        @NotBlank String bucket,
+        @NotBlank String region
+    ) {}
+
+    public record Digest(
+        @NotBlank String cron,
+        boolean enabled
+    ) {}
+}</code></pre>
+  </div>
+</div>
+
+<!-- VALIDATED -->
+<div class="topic" id="validated">
+  <div class="topic-title">@Validated on Properties</div>
+  <div class="in-project-note">If JWT_SECRET env var is missing, the app fails at startup with a clear error — not silently at runtime when the first login request tries to sign a JWT.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p><code>@Validated</code> on a <code>@ConfigurationProperties</code> class runs Bean Validation when the app starts. If any constraint fails — missing required env var, port out of range — Spring Boot refuses to start and prints the exact property that failed. Catch config mistakes at deploy time, not at runtime.</p>
+  <div class="section-label"><span class="num">2</span> Examples</div>
+  <div class="examples">
+    <div class="example">
+      <div class="example-header"><span class="example-title">Startup failure message</span><span class="ex-badge ex-medium">Medium</span></div>
+      <pre><code class="language-java">// If JWT_SECRET env var is not set, app refuses to start:
+//
+// APPLICATION FAILED TO START
+// ***************************
+// Description:
+//   Binding to target AppProperties failed:
+//
+//     Property: app.jwtSecret
+//     Value:    ""
+//     Reason:   must not be blank
+//
+// Action:
+//   Update your application's configuration.
+//   Set the JWT_SECRET environment variable.
+//
+// Much better than NullPointerException at 2AM when the first user logs in!</code></pre>
+    </div>
+  </div>
+</div>
+
+<!-- NESTED + YML -->
+<div class="topic" id="nested">
+  <div class="topic-title">Nested Records + application.yml</div>
+  <div class="in-project-note">The YAML hierarchy mirrors the nested record structure exactly — app.email.host maps to AppProperties.email().host().</div>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">src/main/resources/application.yml</div>
+    <pre><code class="language-java">// application.yml (shown as Java comments for syntax highlighting)
+// app:
+//   jwt-secret: ${JWT_SECRET}              -> AppProperties.jwtSecret()
+//   jwt-expiration-minutes: 60             -> AppProperties.jwtExpirationMinutes()
+//   cache-enabled: true                    -> AppProperties.cacheEnabled()
+//
+//   email:                                 -> AppProperties.email()
+//     host: smtp.sendgrid.net              -> AppProperties.Email.host()
+//     port: 587                            -> AppProperties.Email.port()
+//     from: results@school.com             -> AppProperties.Email.from()
+//     username: ${SENDGRID_USERNAME}
+//     password: ${SENDGRID_PASSWORD}
+//
+//   storage:                               -> AppProperties.storage()
+//     bucket: student-results-bucket       -> AppProperties.Storage.bucket()
+//     region: ap-south-1                   -> AppProperties.Storage.region()
+//
+//   digest:                                -> AppProperties.digest()
+//     cron: "0 0 7 * * MON-FRI"           -> AppProperties.Digest.cron()
+//     enabled: true                        -> AppProperties.Digest.enabled()
+
+// Usage in JwtService — clean, typed, no @Value
+@Service
+public class JwtService {
+    private final AppProperties appProperties;
+
+    public JwtService(AppProperties appProperties) {
+        this.appProperties = appProperties;
+    }
+
+    public String generateToken(UserDetails user) {
+        return Jwts.builder()
+            .subject(user.getUsername())
+            .expiration(new Date(System.currentTimeMillis()
+                + appProperties.jwtExpirationMinutes() * 60_000L))
+            .signWith(Keys.hmacShaKeyFor(
+                Decoders.BASE64.decode(appProperties.jwtSecret())))
+            .compact();
+    }
+}</code></pre>
+  </div>
+</div>
+
+<!-- PROFILES -->
+<div class="topic" id="profiles">
+  <div class="topic-title">Profile-Specific YAML</div>
+  <div class="in-project-note">application-dev.yml enables Docker Compose and verbose SQL. application-prod.yml enables structured JSON logging, disables SQL echo, and tunes the connection pool.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>Spring Boot merges <code>application.yml</code> (base) with <code>application-{profile}.yml</code> (override). Profile-specific files override only the keys they define — the rest comes from base. Activate a profile with <code>SPRING_PROFILES_ACTIVE=prod</code> env var or <code>--spring.profiles.active=dev</code> JVM arg.</p>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">application-dev.yml · application-prod.yml</div>
+    <pre><code class="language-java">// application-dev.yml
+// spring:
+//   jpa:
+//     show-sql: true
+//     properties:
+//       hibernate:
+//         format_sql: true
+//   docker:
+//     compose:
+//       enabled: true          # auto-start postgres + redis via compose.yml
+//
+// logging:
+//   level:
+//     com.studentresults: DEBUG
+//     org.hibernate.SQL: DEBUG
+
+// application-test.yml
+// spring:
+//   jpa:
+//     show-sql: false
+//   task:
+//     scheduling:
+//       enabled: false         # no scheduled jobs during tests
+// app:
+//   digest:
+//     enabled: false
+
+// application-prod.yml
+// spring:
+//   jpa:
+//     show-sql: false
+//   datasource:
+//     hikari:
+//       maximum-pool-size: 20
+//       minimum-idle: 5
+//       connection-timeout: 30000
+// logging:
+//   structured:
+//     format:
+//       console: ecs            # JSON logs for log aggregation
+// management:
+//   endpoints:
+//     web:
+//       exposure:
+//         include: health,metrics,prometheus</code></pre>
+  </div>
+</div>
+
+<!-- SECRETS -->
+<div class="topic" id="secrets">
+  <div class="topic-title">Environment Secrets</div>
+  <div class="in-project-note">JWT_SECRET, DB_PASSWORD, SENDGRID_PASSWORD are never in source code. application.yml references them as ${ENV_VAR} — Spring substitutes at startup from the OS environment.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>Spring Boot's <code>${VAR_NAME}</code> syntax reads from system environment variables, JVM system properties (<code>-Dvar=val</code>), or <code>.env</code> files (with Spring Boot 3.x dotenv support). For Docker/Kubernetes, pass secrets as environment variables. Never commit secrets to Git — use <code>${VAR}</code> references and set the real values in CI/CD or a secrets manager.</p>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">application.yml — secret references + compose.yml env vars</div>
+    <pre><code class="language-java">// application.yml — secrets referenced via ${ENV_VAR}
+// spring:
+//   datasource:
+//     url: jdbc:postgresql://localhost:5432/studentdb
+//     username: ${DB_USERNAME:student_user}   // default after colon
+//     password: ${DB_PASSWORD}                // no default — required
+//   data:
+//     redis:
+//       password: ${REDIS_PASSWORD:}          // empty string default = no password in dev
+//
+// app:
+//   jwt-secret: ${JWT_SECRET}
+//   email:
+//     username: ${SENDGRID_USERNAME}
+//     password: ${SENDGRID_PASSWORD}
+
+// compose.yml — provides values in local dev (Docker Compose)
+// services:
+//   postgres:
+//     image: postgres:16
+//     environment:
+//       POSTGRES_DB: studentdb
+//       POSTGRES_USER: student_user
+//       POSTGRES_PASSWORD: devpassword123  # dev only — never prod!
+//
+//   redis:
+//     image: redis:7-alpine
+
+// Local dev — set in shell or .env file (gitignored):
+// export JWT_SECRET=dev-secret-key-at-least-32-chars
+// export DB_PASSWORD=devpassword123
+
+// Production — set via Kubernetes Secret or AWS Secrets Manager:
+// kubectl create secret generic student-portal \
+//   --from-literal=JWT_SECRET=prod-secret \
+//   --from-literal=DB_PASSWORD=prod-db-password</code></pre>
+  </div>
+</div>
+
+<div class="page-nav">
+  <a href="09-spring-validation.html">← 09 · Validation</a>
+  <a href="11-actuator-micrometer.html">11 · Actuator →</a>
+</div>
+</main>
+</div>
+<footer>Student Portal · Java 21 + Spring Boot 3.3.12</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+<script>
+const links = document.querySelectorAll('.sidebar-link');
+const topics = document.querySelectorAll('.topic');
+const obs = new IntersectionObserver(e => {
+  e.forEach(entry => {
+    if (entry.isIntersecting) {
+      links.forEach(l => l.classList.remove('active'));
+      const a = document.querySelector(`.sidebar-link[href="#${entry.target.id}"]`);
+      if (a) { a.classList.add('active'); a.scrollIntoView({block:'nearest'}); }
+    }
+  });
+}, {rootMargin:'-49px 0px -60% 0px'});
+topics.forEach(t => obs.observe(t));
+</script>
+</body>
+</html>

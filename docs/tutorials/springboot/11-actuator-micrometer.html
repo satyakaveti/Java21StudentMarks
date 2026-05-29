@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Spring Actuator &amp; Micrometer — Student Portal</title>
+<link rel="stylesheet" href="gh.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css"/>
+</head>
+<body>
+<header class="gh-header">
+  <div class="gh-logo"><svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>Student Portal</div>
+  <span class="gh-breadcrumb"><a href="../index.html">tutorials</a> / <a href="index.html">springboot</a> / <span>actuator-micrometer</span></span>
+</header>
+<div class="layout">
+<nav class="sidebar">
+  <div class="sidebar-nav-header"><a href="index.html">← All Modules</a></div>
+  <div class="sidebar-section">Topics</div>
+  <a class="sidebar-link" href="#actuator">Actuator Endpoints</a>
+  <a class="sidebar-link" href="#health">Custom Health Indicator</a>
+  <a class="sidebar-link" href="#meterregistry">MeterRegistry</a>
+  <a class="sidebar-link" href="#counter">Counter</a>
+  <a class="sidebar-link" href="#timer">Timer</a>
+  <a class="sidebar-link" href="#timed">@Timed</a>
+  <a class="sidebar-link" href="#observed">@Observed</a>
+  <a class="sidebar-link" href="#prometheus">Prometheus</a>
+  <a class="sidebar-link" href="#structuredlog">Structured Logging</a>
+  <div class="sidebar-section">All Modules</div>
+  <div class="sidebar-modules">
+    <a class="mod-link" href="01-core-ioc-di.html">01 · Core IoC &amp; DI</a>
+    <a class="mod-link" href="02-spring-mvc.html">02 · Spring MVC</a>
+    <a class="mod-link" href="03-spring-security.html">03 · Security</a>
+    <a class="mod-link" href="04-spring-data-jpa.html">04 · Data JPA</a>
+    <a class="mod-link" href="05-spring-aop.html">05 · AOP</a>
+    <a class="mod-link" href="06-spring-cache.html">06 · Cache</a>
+    <a class="mod-link" href="07-spring-events.html">07 · Events</a>
+    <a class="mod-link" href="08-spring-scheduling.html">08 · Scheduling</a>
+    <a class="mod-link" href="09-spring-validation.html">09 · Validation</a>
+    <a class="mod-link" href="10-config-properties.html">10 · Config Properties</a>
+    <a class="mod-link current-mod" href="11-actuator-micrometer.html">11 · Actuator</a>
+    <a class="mod-link" href="12-testing.html">12 · Testing</a>
+    <a class="mod-link" href="13-virtual-threads-restclient.html">13 · Virtual Threads</a>
+  </div>
+</nav>
+<main class="main">
+<div class="ver-header">
+  <div class="ver-meta"><span class="badge badge-core">Ops</span><span style="font-size:0.875rem;color:#57606a">Spring Boot Actuator · Micrometer · Spring Boot 3.3.12</span></div>
+  <h1>Spring Actuator &amp; Micrometer</h1>
+  <p>Actuator exposes operational endpoints — health, metrics, environment, loggers. Micrometer records custom business metrics — marks created per minute, result fetch latency. Together they give full observability into the running Student Portal.</p>
+</div>
+
+<!-- ACTUATOR -->
+<div class="topic" id="actuator">
+  <div class="topic-title">Actuator Endpoints</div>
+  <div class="in-project-note">health, info, metrics, prometheus, loggers, env are exposed. Health is public (for load balancer). All others require ADMIN role.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>Add <code>spring-boot-starter-actuator</code> and endpoints appear at <code>/actuator/*</code>. By default most are disabled for security. Expose selectively. Key endpoints: <code>/actuator/health</code> (liveness/readiness), <code>/actuator/metrics</code> (list all metrics), <code>/actuator/metrics/{name}</code> (drill into one), <code>/actuator/loggers</code> (change log level at runtime), <code>/actuator/env</code> (all config properties).</p>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">application-prod.yml — actuator config</div>
+    <pre><code class="language-java">// management:
+//   endpoints:
+//     web:
+//       exposure:
+//         include: health, info, metrics, prometheus, loggers, env
+//   endpoint:
+//     health:
+//       show-details: when-authorized   # full details only for ADMIN
+//       probes:
+//         enabled: true                 # /actuator/health/liveness + /readiness
+//   info:
+//     env:
+//       enabled: true
+//     build:
+//       enabled: true
+
+// Security — allow health for load balancer, secure the rest
+// (in SecurityConfig.filterChain):
+// .requestMatchers("/actuator/health").permitAll()
+// .requestMatchers("/actuator/**").hasRole("ADMIN")</code></pre>
+  </div>
+</div>
+
+<!-- HEALTH -->
+<div class="topic" id="health">
+  <div class="topic-title">Custom Health Indicator</div>
+  <div class="in-project-note">ResultServiceHealthIndicator checks that the results service can actually query the DB — more meaningful than just "is the JVM alive".</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>Extend <code>AbstractHealthIndicator</code> and override <code>doHealthCheck()</code>. Call <code>builder.up()</code> or <code>builder.down()</code>. Add details with <code>builder.withDetail(key, value)</code>. Your indicator appears under <code>/actuator/health</code> alongside built-in ones (DB, Redis, disk). Kubernetes uses <code>/actuator/health/liveness</code> and <code>/actuator/health/readiness</code> probes.</p>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">metrics/ResultServiceHealthIndicator.java</div>
+    <pre><code class="language-java">@Component
+public class ResultServiceHealthIndicator extends AbstractHealthIndicator {
+
+    private final MarkRepository markRepository;
+
+    public ResultServiceHealthIndicator(MarkRepository markRepository) {
+        this.markRepository = markRepository;
+        // Custom message when unhealthy
+        super("Result service health check failed");
+    }
+
+    @Override
+    protected void doHealthCheck(Health.Builder builder) {
+        try {
+            long markCount = markRepository.count();
+            builder.up()
+                .withDetail("totalMarks", markCount)
+                .withDetail("status", "Result service is operational");
+        } catch (Exception ex) {
+            builder.down()
+                .withDetail("error", ex.getMessage())
+                .withDetail("status", "Cannot reach marks table");
+        }
+    }
+}
+
+// GET /actuator/health response:
+// {
+//   "status": "UP",
+//   "components": {
+//     "resultService": {
+//       "status": "UP",
+//       "details": { "totalMarks": 450, "status": "Result service is operational" }
+//     },
+//     "db":    { "status": "UP" },
+//     "redis": { "status": "UP" }
+//   }
+// }</code></pre>
+  </div>
+</div>
+
+<!-- METERREGISTRY -->
+<div class="topic" id="meterregistry">
+  <div class="topic-title">MeterRegistry</div>
+  <div class="in-project-note">MeterRegistry is Spring's Micrometer entry point — injected into ResultMetrics to register and update custom counters and timers.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p><code>MeterRegistry</code> is the central Micrometer interface. Inject it anywhere to create meters. Spring Boot auto-configures it with a backend (Prometheus, Datadog, CloudWatch, etc.) based on what's on the classpath. This project uses Prometheus — the registry automatically formats metrics in Prometheus text format at <code>/actuator/prometheus</code>.</p>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">metrics/ResultMetrics.java</div>
+    <pre><code class="language-java">@Component
+public class ResultMetrics {
+
+    private final Counter marksCreatedCounter;
+    private final Counter marksDeletedCounter;
+    private final Timer   resultFetchTimer;
+
+    // MeterRegistry is auto-configured by Spring Boot — just inject it
+    public ResultMetrics(MeterRegistry registry) {
+        this.marksCreatedCounter = Counter.builder("student.marks.created")
+            .description("Total number of marks created")
+            .tag("app", "student-portal")
+            .register(registry);
+
+        this.marksDeletedCounter = Counter.builder("student.marks.deleted")
+            .description("Total number of marks deleted")
+            .register(registry);
+
+        this.resultFetchTimer = Timer.builder("student.results.fetch.duration")
+            .description("Time taken to fetch student results")
+            .publishPercentiles(0.5, 0.95, 0.99)  // p50, p95, p99
+            .register(registry);
+    }
+
+    public void recordMarkCreated()  { marksCreatedCounter.increment(); }
+    public void recordMarkDeleted()  { marksDeletedCounter.increment(); }
+    public Timer getResultFetchTimer() { return resultFetchTimer; }
+}</code></pre>
+  </div>
+</div>
+
+<!-- COUNTER -->
+<div class="topic" id="counter">
+  <div class="topic-title">Counter</div>
+  <div class="in-project-note">Counts marks created and deleted — lets you graph "marks entered per minute" over time in Grafana to spot activity spikes.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>A <code>Counter</code> is a monotonically increasing value. Use it to count events: requests, errors, items processed. Supports tags (labels) for multi-dimensional filtering. Query rate-of-change in Prometheus: <code>rate(student_marks_created_total[5m])</code> gives marks created per second over 5 minutes.</p>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">service/ResultService.java — counter usage</div>
+    <pre><code class="language-java">@Service
+public class ResultService {
+
+    private final MarkRepository markRepository;
+    private final ResultMetrics metrics;
+
+    public ResultService(MarkRepository markRepository, ResultMetrics metrics) {
+        this.markRepository = markRepository;
+        this.metrics = metrics;
+    }
+
+    @Transactional
+    public MarkDTO createMark(Long studentId, CreateMarkRequest request) {
+        var mark = new Mark(studentId, request.subjectId(), request.score());
+        var saved = markRepository.save(mark);
+        metrics.recordMarkCreated();   // increment counter
+        return toDTO(saved);
+    }
+
+    @Transactional
+    public void deleteMark(Long markId) {
+        markRepository.deleteById(markId);
+        metrics.recordMarkDeleted();   // increment counter
+    }
+}
+
+// Prometheus query to alert if marks deleted > 10 in 1 minute:
+// rate(student_marks_deleted_total[1m]) > 10</code></pre>
+  </div>
+</div>
+
+<!-- TIMER -->
+<div class="topic" id="timer">
+  <div class="topic-title">Timer</div>
+  <div class="in-project-note">Times result fetch latency — records p50, p95, p99 so you can see "95% of result lookups complete in under 50ms" in Grafana.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>A <code>Timer</code> records execution duration and counts invocations. Use <code>timer.record(Runnable)</code> or <code>timer.recordCallable(Callable)</code> to time a block. <code>Timer.Sample</code> is the manual start/stop approach. Timers automatically expose <code>_count</code>, <code>_sum</code>, and <code>_max</code> to Prometheus. Add percentile histograms with <code>publishPercentiles()</code>.</p>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">service/ResultService.java — timer usage</div>
+    <pre><code class="language-java">public List&lt;MarkDTO&gt; getResults(Long studentId) {
+    // Option A: record() wraps the block and handles exceptions
+    return metrics.getResultFetchTimer().record(() ->
+        markRepository.findByStudentId(studentId)
+            .stream().map(this::toDTO).toList()
+    );
+}
+
+// Option B: manual start/stop (useful when you need the sample object)
+public ResultSummaryDTO getSummary(Long studentId) {
+    var sample = Timer.start(meterRegistry);
+    try {
+        return buildSummary(studentId);
+    } finally {
+        sample.stop(metrics.getResultFetchTimer());
+    }
+}
+
+// Prometheus output:
+// student_results_fetch_duration_seconds_count 1450
+// student_results_fetch_duration_seconds_sum 12.3
+// student_results_fetch_duration_seconds_max 0.245
+// student_results_fetch_duration_seconds{quantile="0.95"} 0.048</code></pre>
+  </div>
+</div>
+
+<!-- @TIMED -->
+<div class="topic" id="timed">
+  <div class="topic-title">@Timed</div>
+  <div class="in-project-note">@Timed on controller methods automatically records HTTP request duration per endpoint — no manual Timer code inside each method needed.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p><code>@Timed</code> (Micrometer annotation) automatically creates and records a timer for the annotated method. On controllers, it captures HTTP request duration. On services, it wraps method execution. Requires a <code>TimedAspect</code> bean for non-controller usage.</p>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">controller/ResultController.java · config/MetricsConfig.java</div>
+    <pre><code class="language-java">// Controller — @Timed at class level applies to all methods
+@RestController
+@RequestMapping("/api/results")
+@Timed(value = "student.results.api", description = "Result API response times")
+public class ResultController {
+    // Each method gets: student_results_api_seconds{method="getResults",...}
+}
+
+// For @Timed on service methods, register TimedAspect bean
+@Configuration
+public class MetricsConfig {
+    @Bean
+    public TimedAspect timedAspect(MeterRegistry registry) {
+        return new TimedAspect(registry);
+    }
+}
+
+// Then on service methods:
+@Timed(value = "student.service.createMark", description = "Mark creation time")
+public MarkDTO createMark(Long studentId, CreateMarkRequest request) { ... }</code></pre>
+  </div>
+</div>
+
+<!-- @OBSERVED -->
+<div class="topic" id="observed">
+  <div class="topic-title">@Observed</div>
+  <div class="in-project-note">@Observed on service methods creates automatic tracing spans — visible in distributed tracing tools (Zipkin, Jaeger) as well as metrics.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p><code>@Observed</code> (Spring Boot 3.x Micrometer Observation API) is more powerful than <code>@Timed</code> — it records both metrics AND distributed tracing spans in one annotation. Requires <code>ObservedAspect</code> bean and a tracing backend (e.g. Micrometer Tracing with Brave or OpenTelemetry).</p>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">service/ResultService.java · config/ObservabilityConfig.java</div>
+    <pre><code class="language-java">// Register ObservedAspect bean
+@Configuration
+public class ObservabilityConfig {
+    @Bean
+    public ObservedAspect observedAspect(ObservationRegistry registry) {
+        return new ObservedAspect(registry);
+    }
+}
+
+// Annotate service methods
+@Service
+public class ResultService {
+
+    @Observed(name = "result.service.getResults",
+              contextualName = "fetch-student-results",
+              lowCardinalityKeyValues = {"layer", "service"})
+    public List&lt;MarkDTO&gt; getResults(Long studentId) {
+        return markRepository.findByStudentId(studentId)
+            .stream().map(this::toDTO).toList();
+        // Creates: a metric AND a trace span named "fetch-student-results"
+        // Trace ID propagates to child spans (DB query, cache lookup)
+    }
+}
+
+// Structured log output (with trace context):
+// {"timestamp":"2024-06-15T07:00:00Z","level":"INFO",
+//  "message":"Fetching results","traceId":"abc123","spanId":"def456",
+//  "studentId":42,"layer":"service"}</code></pre>
+  </div>
+</div>
+
+<!-- PROMETHEUS -->
+<div class="topic" id="prometheus">
+  <div class="topic-title">Prometheus Scrape Endpoint</div>
+  <div class="in-project-note">GET /actuator/prometheus returns all metrics in Prometheus text format. Prometheus scrapes it every 15 seconds; Grafana dashboards visualise it.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>Add <code>micrometer-registry-prometheus</code> to the classpath and Spring Boot automatically exposes <code>/actuator/prometheus</code>. Configure Prometheus to scrape it. The endpoint includes JVM metrics (heap, GC, threads), HTTP metrics (requests per endpoint, latency), and your custom counters and timers — all in one response.</p>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">Sample output — GET /actuator/prometheus</div>
+    <pre><code class="language-java">// Sample metrics output (text format):
+//
+// # HELP student_marks_created_total Total number of marks created
+// # TYPE student_marks_created_total counter
+// student_marks_created_total{app="student-portal"} 142.0
+//
+// # HELP student_results_fetch_duration_seconds Time to fetch results
+// # TYPE student_results_fetch_duration_seconds summary
+// student_results_fetch_duration_seconds{quantile="0.5"}  0.012
+// student_results_fetch_duration_seconds{quantile="0.95"} 0.048
+// student_results_fetch_duration_seconds{quantile="0.99"} 0.120
+// student_results_fetch_duration_seconds_count 1450
+// student_results_fetch_duration_seconds_sum   18.4
+//
+// # HELP jvm_memory_used_bytes JVM memory used
+// jvm_memory_used_bytes{area="heap"} 1.28e+08</code></pre>
+  </div>
+</div>
+
+<!-- STRUCTURED LOGGING -->
+<div class="topic" id="structuredlog">
+  <div class="topic-title">Structured Logging</div>
+  <div class="in-project-note">In prod profile, logging.structured.format.console=ecs outputs JSON logs — each log line is a JSON object with timestamp, level, message, traceId, spanId, and all MDC fields.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>Spring Boot 3.2 added native structured logging. Set <code>logging.structured.format.console=ecs</code> (Elastic Common Schema) or <code>logstash</code> in application-prod.yml. Log lines become JSON objects that log aggregators (ELK, Datadog, Loki) can parse and query. Trace IDs from Micrometer Tracing appear automatically.</p>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">application-prod.yml · sample log output</div>
+    <pre><code class="language-java">// application-prod.yml:
+// logging:
+//   structured:
+//     format:
+//       console: ecs   # Elastic Common Schema JSON
+
+// Sample log line (pretty-printed — actually one line in prod):
+// {
+//   "@timestamp": "2024-06-15T07:00:01.234Z",
+//   "log.level":  "INFO",
+//   "message":    "Mark created: studentId=42, subject=MATHS, score=87",
+//   "service.name": "student-portal",
+//   "trace.id":   "abc123def456",
+//   "span.id":    "789xyz",
+//   "process.pid": 12345,
+//   "log.logger": "com.studentresults.service.ResultService"
+// }
+
+// Query in Kibana / Grafana Loki:
+// {service.name="student-portal"} | json | log.level="ERROR"
+// {service.name="student-portal"} | json | message=~"Mark created.*"</code></pre>
+  </div>
+</div>
+
+<div class="page-nav">
+  <a href="10-config-properties.html">← 10 · Config Properties</a>
+  <a href="12-testing.html">12 · Testing →</a>
+</div>
+</main>
+</div>
+<footer>Student Portal · Java 21 + Spring Boot 3.3.12</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+<script>
+const links = document.querySelectorAll('.sidebar-link');
+const topics = document.querySelectorAll('.topic');
+const obs = new IntersectionObserver(e => {
+  e.forEach(entry => {
+    if (entry.isIntersecting) {
+      links.forEach(l => l.classList.remove('active'));
+      const a = document.querySelector(`.sidebar-link[href="#${entry.target.id}"]`);
+      if (a) { a.classList.add('active'); a.scrollIntoView({block:'nearest'}); }
+    }
+  });
+}, {rootMargin:'-49px 0px -60% 0px'});
+topics.forEach(t => obs.observe(t));
+</script>
+</body>
+</html>
