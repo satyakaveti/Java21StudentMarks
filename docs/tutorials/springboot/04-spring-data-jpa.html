@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Spring Data JPA — Student Portal</title>
+<link rel="stylesheet" href="gh.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css"/>
+</head>
+<body>
+<header class="gh-header">
+  <div class="gh-logo"><svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>Student Portal</div>
+  <span class="gh-breadcrumb"><a href="../index.html">tutorials</a> / <a href="index.html">springboot</a> / <span>spring-data-jpa</span></span>
+</header>
+<div class="layout">
+<nav class="sidebar">
+  <div class="sidebar-nav-header"><a href="index.html">← All Modules</a></div>
+  <div class="sidebar-section">Topics</div>
+  <a class="sidebar-link" href="#entities">Entities &amp; Mappings</a>
+  <a class="sidebar-link" href="#relationships">Relationships</a>
+  <a class="sidebar-link" href="#repositories">Repositories</a>
+  <a class="sidebar-link" href="#derived">Derived Query Methods</a>
+  <a class="sidebar-link" href="#jpql">@Query — JPQL &amp; Native</a>
+  <a class="sidebar-link" href="#projections">Interface Projections</a>
+  <a class="sidebar-link" href="#specifications">JpaSpecificationExecutor</a>
+  <a class="sidebar-link" href="#auditing">JPA Auditing</a>
+  <a class="sidebar-link" href="#optimisticlock">Optimistic Locking</a>
+  <a class="sidebar-link" href="#softdelete">Soft Delete</a>
+  <a class="sidebar-link" href="#streaming">Stream&lt;T&gt;</a>
+  <div class="sidebar-section">All Modules</div>
+  <div class="sidebar-modules">
+    <a class="mod-link" href="01-core-ioc-di.html">01 · Core IoC &amp; DI</a>
+    <a class="mod-link" href="02-spring-mvc.html">02 · Spring MVC</a>
+    <a class="mod-link" href="03-spring-security.html">03 · Security</a>
+    <a class="mod-link current-mod" href="04-spring-data-jpa.html">04 · Data JPA</a>
+    <a class="mod-link" href="05-spring-aop.html">05 · AOP</a>
+    <a class="mod-link" href="06-spring-cache.html">06 · Cache</a>
+    <a class="mod-link" href="07-spring-events.html">07 · Events</a>
+    <a class="mod-link" href="08-spring-scheduling.html">08 · Scheduling</a>
+    <a class="mod-link" href="09-spring-validation.html">09 · Validation</a>
+    <a class="mod-link" href="10-config-properties.html">10 · Config Properties</a>
+    <a class="mod-link" href="11-actuator-micrometer.html">11 · Actuator</a>
+    <a class="mod-link" href="12-testing.html">12 · Testing</a>
+    <a class="mod-link" href="13-virtual-threads-restclient.html">13 · Virtual Threads</a>
+  </div>
+</nav>
+<main class="main">
+<div class="ver-header">
+  <div class="ver-meta"><span class="badge badge-data">Data</span><span style="font-size:0.875rem;color:#57606a">Spring Data JPA · Hibernate 6 · Spring Boot 3.3.12</span></div>
+  <h1>Spring Data JPA</h1>
+  <p>All database access in this project goes through Spring Data JPA repositories. Hibernate 6 handles SQL generation. Flyway runs the migrations. Every pattern — derived queries, JPQL, native SQL, projections, specifications, auditing, optimistic locking, and soft delete — is used in the Student Portal.</p>
+</div>
+
+<!-- ENTITIES -->
+<div class="topic" id="entities">
+  <div class="topic-title">Entities &amp; Mappings</div>
+  <div class="in-project-note">Student, Subject, Mark, User, Role, AuditLog — all are JPA entities mapped to PostgreSQL tables created by Flyway migrations.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>A JPA entity is a Java class mapped to a DB table. <code>@Entity</code> registers it, <code>@Table</code> names the table, <code>@Id</code> marks the primary key, <code>@GeneratedValue</code> handles auto-increment. <code>@Column</code> customises column names and constraints. Hibernate 6 (Boot 3.x) generates the SQL from these annotations.</p>
+  <div class="section-label"><span class="num">2</span> Examples</div>
+  <div class="examples">
+    <div class="example">
+      <div class="example-header"><span class="example-title">Basic entity</span><span class="ex-badge ex-simple">Simple</span></div>
+      <pre><code class="language-java">@Entity
+@Table(name = "subjects")
+public class Subject {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.SEQUENCE,
+                    generator = "subject_seq")
+    @SequenceGenerator(name = "subject_seq",
+                       sequenceName = "subject_seq",
+                       allocationSize = 50)   // pre-allocates 50 IDs per round
+    private Long id;
+
+    @Column(name = "name", nullable = false, unique = true, length = 50)
+    private String name;  // MATHS, SCIENCE, ENGLISH
+}</code></pre>
+    </div>
+  </div>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">domain/Mark.java</div>
+    <pre><code class="language-java">@Entity
+@Table(name = "marks",
+       uniqueConstraints = @UniqueConstraint(columnNames = {"student_id", "subject_id"}))
+@EntityListeners(AuditingEntityListener.class)
+public class Mark {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "mark_seq")
+    @SequenceGenerator(name = "mark_seq", sequenceName = "mark_seq", allocationSize = 50)
+    private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "student_id", nullable = false)
+    private Student student;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "subject_id", nullable = false)
+    private Subject subject;
+
+    @Column(name = "score", nullable = false)
+    private int score;   // 0–100
+
+    @Column(name = "exam_date")
+    private LocalDate examDate;
+
+    @Version
+    private Long version;   // optimistic locking
+
+    @CreatedDate
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
+
+    @LastModifiedDate
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+}</code></pre>
+  </div>
+</div>
+
+<!-- RELATIONSHIPS -->
+<div class="topic" id="relationships">
+  <div class="topic-title">Relationships — @ManyToOne, @OneToMany, FetchType.LAZY</div>
+  <div class="in-project-note">Mark belongs to Student and Subject (@ManyToOne). Student has many Marks (@OneToMany). All relationships use FetchType.LAZY to avoid N+1 queries.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>JPA relationships: <code>@ManyToOne</code> (FK on this table), <code>@OneToMany</code> (FK on the other table), <code>@ManyToMany</code> (join table). Always use <code>FetchType.LAZY</code> — EAGER loading causes N+1 queries and loads data you don't need. Use <code>JOIN FETCH</code> in JPQL to eagerly load specific associations when needed.</p>
+  <div class="section-label"><span class="num">2</span> Examples</div>
+  <div class="examples">
+    <div class="example">
+      <div class="example-header"><span class="example-title">Lazy relationships — correct pattern</span><span class="ex-badge ex-medium">Medium</span></div>
+      <pre><code class="language-java">@Entity
+public class Student {
+
+    @Id @GeneratedValue(strategy = GenerationType.SEQUENCE,
+                        generator = "student_seq")
+    @SequenceGenerator(name = "student_seq", allocationSize = 50)
+    private Long id;
+
+    @Column(nullable = false) private String name;
+    @Column(nullable = false, unique = true) private String rollNumber;
+    @Column(nullable = false, unique = true) private String email;
+
+    // LAZY — marks only loaded when accessed
+    @OneToMany(mappedBy = "student", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List&lt;Mark&gt; marks = new ArrayList&lt;&gt;();
+
+    // Soft delete flag — see @SQLDelete below
+    @Column(name = "deleted") private boolean deleted = false;
+}
+
+@Entity
+public class Mark {
+    // LAZY — student not loaded unless accessed
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "student_id")
+    private Student student;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "subject_id")
+    private Subject subject;
+}</code></pre>
+    </div>
+    <div class="example">
+      <div class="example-header"><span class="example-title">JOIN FETCH to avoid N+1</span><span class="ex-badge ex-realtime">Real-time</span></div>
+      <pre><code class="language-java">// ❌ N+1 — loads all marks, then for each mark fires a separate query for student
+List&lt;Mark&gt; marks = markRepository.findAll();
+marks.forEach(m -> System.out.println(m.getStudent().getName())); // N extra queries!
+
+// ✅ JOIN FETCH — single query loads marks + students together
+@Query("SELECT m FROM Mark m JOIN FETCH m.student s JOIN FETCH m.subject sub " +
+       "WHERE s.id = :studentId")
+List&lt;Mark&gt; findByStudentIdWithDetails(@Param("studentId") Long studentId);</code></pre>
+    </div>
+  </div>
+</div>
+
+<!-- REPOSITORIES -->
+<div class="topic" id="repositories">
+  <div class="topic-title">Repositories — JpaRepository</div>
+  <div class="in-project-note">StudentRepository, MarkRepository, SubjectRepository all extend JpaRepository — getting save, findById, findAll, delete, count, and paginated findAll for free.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p><code>JpaRepository&lt;T, ID&gt;</code> provides complete CRUD + pagination + sorting out of the box. Spring Data generates the implementation at runtime — you just define the interface. The hierarchy: <code>Repository</code> → <code>CrudRepository</code> → <code>PagingAndSortingRepository</code> → <code>JpaRepository</code>.</p>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">repository/StudentRepository.java</div>
+    <pre><code class="language-java">@Repository
+public interface StudentRepository extends JpaRepository&lt;Student, Long&gt;,
+                                           JpaSpecificationExecutor&lt;Student&gt; {
+
+    // Derived query — Spring generates: SELECT * FROM students WHERE roll_number = ?
+    Optional&lt;Student&gt; findByRollNumber(String rollNumber);
+
+    // Derived query — email lookup for login
+    Optional&lt;Student&gt; findByEmail(String email);
+
+    // Existence check — generates: SELECT COUNT(*) > 0 WHERE roll_number = ?
+    boolean existsByRollNumber(String rollNumber);
+
+    // Paginated search — full-text via native query
+    @Query(value = "SELECT * FROM students WHERE name ILIKE %:name%",
+           nativeQuery = true)
+    Page&lt;Student&gt; searchByName(@Param("name") String name, Pageable pageable);
+}</code></pre>
+  </div>
+</div>
+
+<!-- DERIVED QUERIES -->
+<div class="topic" id="derived">
+  <div class="topic-title">Derived Query Methods</div>
+  <div class="in-project-note">findByStudentId, findByStudentIdAndSubjectId, existsByRollNumber — Spring generates the SQL from the method name alone, no @Query needed.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>Spring Data reads the method name and generates JPQL automatically. Keywords: <code>findBy</code>, <code>countBy</code>, <code>existsBy</code>, <code>deleteBy</code>. Property navigation with <code>And</code>, <code>Or</code>. Comparisons: <code>LessThan</code>, <code>GreaterThan</code>, <code>Between</code>, <code>Like</code>, <code>In</code>. Sorting: <code>OrderByNameAsc</code>.</p>
+  <div class="section-label"><span class="num">2</span> Examples</div>
+  <div class="examples">
+    <div class="example">
+      <div class="example-header"><span class="example-title">Derived method keywords</span><span class="ex-badge ex-simple">Simple</span></div>
+      <pre><code class="language-java">// Generated SQL: SELECT * FROM marks WHERE student_id = ?
+List&lt;Mark&gt; findByStudentId(Long studentId);
+
+// SELECT * FROM marks WHERE student_id = ? AND subject_id = ?
+Optional&lt;Mark&gt; findByStudentIdAndSubjectId(Long studentId, Long subjectId);
+
+// SELECT COUNT(*) > 0 FROM students WHERE roll_number = ?
+boolean existsByRollNumber(String rollNumber);
+
+// SELECT * FROM marks WHERE score BETWEEN ? AND ? ORDER BY score DESC
+List&lt;Mark&gt; findByScoreBetweenOrderByScoreDesc(int min, int max);
+
+// SELECT COUNT(*) FROM marks WHERE student_id = ?
+long countByStudentId(Long studentId);</code></pre>
+    </div>
+  </div>
+</div>
+
+<!-- JPQL -->
+<div class="topic" id="jpql">
+  <div class="topic-title">@Query — JPQL &amp; Native SQL</div>
+  <div class="in-project-note">Average mark per subject, total marks, student rank, full-text name search — all use @Query because the logic is too complex for derived method names.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>When derived names can't express the query, use <code>@Query</code>. JPQL uses entity/field names (portable across DBs). Native SQL uses table/column names (database-specific). Use <code>@Param</code> for named parameters. For updates/deletes, add <code>@Modifying</code> + <code>@Transactional</code>.</p>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">repository/MarkRepository.java</div>
+    <pre><code class="language-java">@Repository
+public interface MarkRepository extends JpaRepository&lt;Mark, Long&gt; {
+
+    // JPQL — entity names, not table names
+    List&lt;Mark&gt; findByStudentId(Long studentId);
+
+    // Aggregate — average per subject
+    @Query("SELECT m.subject.name, AVG(m.score) FROM Mark m " +
+           "WHERE m.student.id = :studentId GROUP BY m.subject.name")
+    List&lt;Object[]&gt; findAveragesByStudentId(@Param("studentId") Long studentId);
+
+    // Calculate student rank by total score
+    @Query("SELECT COUNT(DISTINCT m.student.id) + 1 FROM Mark m " +
+           "GROUP BY m.student.id " +
+           "HAVING SUM(m.score) > " +
+               "(SELECT SUM(m2.score) FROM Mark m2 WHERE m2.student.id = :studentId)")
+    int findRankForStudent(@Param("studentId") Long studentId);
+
+    // Native SQL — full-text search (PostgreSQL ILIKE)
+    @Query(value = "SELECT * FROM marks m JOIN students s ON m.student_id = s.id " +
+                   "WHERE s.name ILIKE %:name%",
+           nativeQuery = true)
+    List&lt;Mark&gt; searchByStudentName(@Param("name") String name);
+
+    // Modifying — bulk update with @Modifying
+    @Modifying
+    @Transactional
+    @Query("UPDATE Mark m SET m.score = :score WHERE m.id = :id")
+    int updateScore(@Param("id") Long id, @Param("score") int score);
+
+    // Stream — lazy DB cursor for bulk report generation
+    @Query("SELECT m FROM Mark m JOIN FETCH m.student JOIN FETCH m.subject")
+    Stream&lt;Mark&gt; streamAll();
+}</code></pre>
+  </div>
+</div>
+
+<!-- PROJECTIONS -->
+<div class="topic" id="projections">
+  <div class="topic-title">Interface Projections</div>
+  <div class="in-project-note">ResultSummary projection returns only id, subject name, score, and grade — not the full Mark entity. Reduces data fetched from DB and keeps the API response lean.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>Interface projections let you select only the fields you need. Define an interface with getter methods matching entity fields. Spring Data generates a proxy that fetches only those columns. More efficient than loading full entities and mapping them manually. Also works with nested properties via default methods.</p>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">dto/ResultSummary.java (projection interface)</div>
+    <pre><code class="language-java">// Projection interface — only these fields are fetched
+public interface ResultSummary {
+    Long getId();
+    String getSubjectName();  // maps to mark.subject.name via SpEL
+    int getScore();
+
+    // Computed property in the projection
+    default String getGrade() {
+        int s = getScore();
+        if (s >= 75) return "A";
+        if (s >= 50) return "B";
+        if (s >= 35) return "C";
+        return "F";
+    }
+
+    default boolean isPassed() {
+        return getScore() >= 35;
+    }
+}
+
+// Repository method using the projection
+@Query("SELECT m.id AS id, s.name AS subjectName, m.score AS score " +
+       "FROM Mark m JOIN m.subject s WHERE m.student.id = :studentId")
+List&lt;ResultSummary&gt; findResultSummaryByStudentId(@Param("studentId") Long studentId);</code></pre>
+  </div>
+</div>
+
+<!-- SPECIFICATIONS -->
+<div class="topic" id="specifications">
+  <div class="topic-title">JpaSpecificationExecutor — Dynamic Filtering</div>
+  <div class="in-project-note">Admin can filter marks by subject, grade range, and date range — all optional. JpaSpecificationExecutor composes Predicate conditions dynamically at runtime.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p><code>JpaSpecificationExecutor&lt;T&gt;</code> enables dynamic query building using the Criteria API wrapped in <code>Specification&lt;T&gt;</code> lambdas. Each <code>Specification</code> adds one condition. Combine with <code>and()</code> / <code>or()</code>. Null-safe: skip specs whose filter param is null.</p>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">repository/MarkRepository.java · service/ResultService.java</div>
+    <pre><code class="language-java">// Repository extends JpaSpecificationExecutor
+public interface MarkRepository extends JpaRepository&lt;Mark, Long&gt;,
+                                         JpaSpecificationExecutor&lt;Mark&gt; { }
+
+// Specification factory — each method returns one condition
+public class MarkSpecifications {
+
+    public static Specification&lt;Mark&gt; hasSubject(String subjectName) {
+        return (root, query, cb) -> subjectName == null ? null :
+            cb.equal(root.get("subject").get("name"), subjectName);
+    }
+
+    public static Specification&lt;Mark&gt; scoreAtLeast(Integer minScore) {
+        return (root, query, cb) -> minScore == null ? null :
+            cb.greaterThanOrEqualTo(root.get("score"), minScore);
+    }
+
+    public static Specification&lt;Mark&gt; examAfter(LocalDate fromDate) {
+        return (root, query, cb) -> fromDate == null ? null :
+            cb.greaterThanOrEqualTo(root.get("examDate"), fromDate);
+    }
+}
+
+// Service — compose dynamically
+public Page&lt;MarkDTO&gt; filterMarks(String subject, Integer minScore,
+                                   LocalDate from, Pageable pageable) {
+    var spec = Specification.where(hasSubject(subject))
+                            .and(scoreAtLeast(minScore))
+                            .and(examAfter(from));
+    return markRepository.findAll(spec, pageable).map(this::toDTO);
+}</code></pre>
+  </div>
+</div>
+
+<!-- AUDITING -->
+<div class="topic" id="auditing">
+  <div class="topic-title">JPA Auditing</div>
+  <div class="in-project-note">Every entity automatically gets createdAt, updatedAt, createdBy, lastModifiedBy populated by Spring — no manual code needed in service methods.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>Enable with <code>@EnableJpaAuditing</code>. Annotate fields: <code>@CreatedDate</code>, <code>@LastModifiedDate</code>, <code>@CreatedBy</code>, <code>@LastModifiedBy</code>. Add <code>@EntityListeners(AuditingEntityListener.class)</code> to each entity. Supply the current user via <code>AuditorAware&lt;String&gt;</code> bean that reads from <code>SecurityContextHolder</code>.</p>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">domain/Student.java · config/JpaConfig.java</div>
+    <pre><code class="language-java">// Entity — auditing fields
+@Entity
+@EntityListeners(AuditingEntityListener.class)
+public class Student {
+    // ... other fields ...
+
+    @CreatedDate
+    @Column(name = "created_at", updatable = false, nullable = false)
+    private LocalDateTime createdAt;
+
+    @LastModifiedDate
+    @Column(name = "updated_at", nullable = false)
+    private LocalDateTime updatedAt;
+
+    @CreatedBy
+    @Column(name = "created_by", updatable = false)
+    private String createdBy;   // username from JWT
+
+    @LastModifiedBy
+    @Column(name = "last_modified_by")
+    private String lastModifiedBy;
+}
+
+// Config — tell Spring how to get the current user
+@Configuration
+@EnableJpaAuditing(auditorAwareRef = "auditorProvider")
+public class JpaConfig {
+
+    @Bean
+    public AuditorAware&lt;String&gt; auditorProvider() {
+        return () -> Optional.ofNullable(SecurityContextHolder.getContext())
+            .map(SecurityContext::getAuthentication)
+            .filter(a -> a != null && a.isAuthenticated()
+                      && !"anonymousUser".equals(a.getPrincipal()))
+            .map(Authentication::getName);
+    }
+}</code></pre>
+  </div>
+</div>
+
+<!-- OPTIMISTIC LOCKING -->
+<div class="topic" id="optimisticlock">
+  <div class="topic-title">Optimistic Locking — @Version</div>
+  <div class="in-project-note">Mark entity has @Version — if two admins update the same mark concurrently, the second write throws OptimisticLockException (409 Conflict), preventing silent data loss.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>Optimistic locking assumes conflicts are rare. Instead of locking the DB row (pessimistic), it adds a <code>version</code> column. Every update checks <code>WHERE id = ? AND version = ?</code>. If another transaction already updated it (version changed), Hibernate throws <code>ObjectOptimisticLockingFailureException</code> → you catch it and return 409.</p>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">domain/Mark.java · exception/GlobalExceptionHandler.java</div>
+    <pre><code class="language-java">// Entity — add @Version field
+@Entity
+public class Mark {
+    @Version
+    private Long version;  // Hibernate manages this automatically
+    // ...
+}
+
+// Hibernate generates:
+// UPDATE marks SET score = ?, version = 2 WHERE id = 1 AND version = 1
+// If version mismatch → throws OptimisticLockingFailureException
+
+// Exception handler — return 409
+@ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+public ProblemDetail handleConflict(ObjectOptimisticLockingFailureException ex) {
+    var p = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
+        "This record was updated by another user. Please refresh and try again.");
+    p.setTitle("Conflict");
+    return p;
+}</code></pre>
+  </div>
+</div>
+
+<!-- SOFT DELETE -->
+<div class="topic" id="softdelete">
+  <div class="topic-title">Soft Delete — @SQLDelete &amp; @Filter</div>
+  <div class="in-project-note">Deleting a student sets deleted=true in the DB — the row is never physically removed. @Filter ensures all queries automatically exclude soft-deleted students.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p><code>@SQLDelete</code> overrides Hibernate's DELETE SQL with an UPDATE that sets a <code>deleted</code> flag. <code>@FilterDef</code> + <code>@Filter</code> add a WHERE clause to all SELECT queries for this entity. The filter must be enabled per session — do this in a <code>FilterInterceptor</code> or a <code>BeanPostProcessor</code>.</p>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">domain/Student.java</div>
+    <pre><code class="language-java">@Entity
+@Table(name = "students")
+@SQLDelete(sql = "UPDATE students SET deleted = true WHERE id = ? AND version = ?")
+@FilterDef(name = "deletedFilter",
+           parameters = @ParamDef(name = "isDeleted", type = Boolean.class))
+@Filter(name = "deletedFilter", condition = "deleted = :isDeleted")
+public class Student {
+
+    @Column(name = "deleted", nullable = false)
+    private boolean deleted = false;
+
+    @Version
+    private Long version;
+    // ...
+}
+
+// Enable the filter for all queries in a request — via interceptor or config
+@Component
+public class SoftDeleteFilterInterceptor implements HandlerInterceptor {
+
+    @PersistenceContext
+    private EntityManager entityManager;
+
+    @Override
+    public boolean preHandle(HttpServletRequest req,
+                              HttpServletResponse res, Object handler) {
+        entityManager.unwrap(Session.class)
+            .enableFilter("deletedFilter")
+            .setParameter("isDeleted", false);   // always exclude deleted students
+        return true;
+    }
+}</code></pre>
+  </div>
+</div>
+
+<!-- STREAMING -->
+<div class="topic" id="streaming">
+  <div class="topic-title">Stream&lt;T&gt; — Bulk Report Generation</div>
+  <div class="in-project-note">streamAll() uses a DB cursor — fetches marks row by row without loading the entire table into memory. Used for generating year-end bulk reports.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>Spring Data repository methods can return <code>Stream&lt;T&gt;</code>. Hibernate opens a DB cursor and returns rows lazily — memory stays constant even for millions of rows. Must be used inside a <code>@Transactional</code> method and the stream must be closed (use try-with-resources).</p>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">repository/MarkRepository.java · service/ReportService.java</div>
+    <pre><code class="language-java">// Repository — DB cursor
+@Query("SELECT m FROM Mark m JOIN FETCH m.student JOIN FETCH m.subject")
+Stream&lt;Mark&gt; streamAll();
+
+// Service — process without loading all into memory
+@Transactional(readOnly = true)
+public void generateYearEndReport(int year, ReportWriter writer) {
+    try (var markStream = markRepository.streamAll()) {
+        markStream
+            .filter(m -> m.getExamDate().getYear() == year)
+            .map(m -> new ReportRow(
+                m.getStudent().getName(),
+                m.getSubject().getName(),
+                m.getScore(),
+                gradeFor(m.getScore())))
+            .forEach(writer::appendRow);
+    }
+    writer.flush();
+}</code></pre>
+  </div>
+</div>
+
+<div class="page-nav">
+  <a href="03-spring-security.html">← 03 · Security</a>
+  <a href="05-spring-aop.html">05 · AOP →</a>
+</div>
+</main>
+</div>
+<footer>Student Portal · Java 21 + Spring Boot 3.3.12</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+<script>
+const links = document.querySelectorAll('.sidebar-link');
+const topics = document.querySelectorAll('.topic');
+const obs = new IntersectionObserver(e => {
+  e.forEach(entry => {
+    if (entry.isIntersecting) {
+      links.forEach(l => l.classList.remove('active'));
+      const a = document.querySelector(`.sidebar-link[href="#${entry.target.id}"]`);
+      if (a) { a.classList.add('active'); a.scrollIntoView({block:'nearest'}); }
+    }
+  });
+}, {rootMargin:'-49px 0px -60% 0px'});
+topics.forEach(t => obs.observe(t));
+</script>
+</body>
+</html>

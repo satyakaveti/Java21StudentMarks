@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Spring Validation — Student Portal</title>
+<link rel="stylesheet" href="gh.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css"/>
+</head>
+<body>
+<header class="gh-header">
+  <div class="gh-logo"><svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>Student Portal</div>
+  <span class="gh-breadcrumb"><a href="../index.html">tutorials</a> / <a href="index.html">springboot</a> / <span>spring-validation</span></span>
+</header>
+<div class="layout">
+<nav class="sidebar">
+  <div class="sidebar-nav-header"><a href="index.html">← All Modules</a></div>
+  <div class="sidebar-section">Topics</div>
+  <a class="sidebar-link" href="#builtin">Built-in Constraints</a>
+  <a class="sidebar-link" href="#valid">@Valid on @RequestBody</a>
+  <a class="sidebar-link" href="#validated">@Validated on Controllers</a>
+  <a class="sidebar-link" href="#custom-constraint">Custom @MarkRange</a>
+  <a class="sidebar-link" href="#unique-roll">Custom @UniqueRollNumber</a>
+  <a class="sidebar-link" href="#groups">Validation Groups</a>
+  <a class="sidebar-link" href="#error-response">Validation Error Response</a>
+  <div class="sidebar-section">All Modules</div>
+  <div class="sidebar-modules">
+    <a class="mod-link" href="01-core-ioc-di.html">01 · Core IoC &amp; DI</a>
+    <a class="mod-link" href="02-spring-mvc.html">02 · Spring MVC</a>
+    <a class="mod-link" href="03-spring-security.html">03 · Security</a>
+    <a class="mod-link" href="04-spring-data-jpa.html">04 · Data JPA</a>
+    <a class="mod-link" href="05-spring-aop.html">05 · AOP</a>
+    <a class="mod-link" href="06-spring-cache.html">06 · Cache</a>
+    <a class="mod-link" href="07-spring-events.html">07 · Events</a>
+    <a class="mod-link" href="08-spring-scheduling.html">08 · Scheduling</a>
+    <a class="mod-link current-mod" href="09-spring-validation.html">09 · Validation</a>
+    <a class="mod-link" href="10-config-properties.html">10 · Config Properties</a>
+    <a class="mod-link" href="11-actuator-micrometer.html">11 · Actuator</a>
+    <a class="mod-link" href="12-testing.html">12 · Testing</a>
+    <a class="mod-link" href="13-virtual-threads-restclient.html">13 · Virtual Threads</a>
+  </div>
+</nav>
+<main class="main">
+<div class="ver-header">
+  <div class="ver-meta"><span class="badge badge-web">Validation</span><span style="font-size:0.875rem;color:#57606a">Jakarta Validation 3 · Spring Boot 3.3.12</span></div>
+  <h1>Spring Validation</h1>
+  <p>Every request body in this project is validated before it reaches the service layer. Bean Validation annotations on Java records, a custom <code>@MarkRange</code> constraint for 0–100 scores, a DB-backed <code>@UniqueRollNumber</code> constraint, and validation groups for different create vs update rules.</p>
+</div>
+
+<!-- BUILT-IN CONSTRAINTS -->
+<div class="topic" id="builtin">
+  <div class="topic-title">Built-in Constraints</div>
+  <div class="in-project-note">@NotBlank on name and rollNumber, @Size on name, @Min/@Max on scores, @Email on email — all standard Jakarta Validation annotations.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>Jakarta Validation (formerly javax.validation) provides a standard set of constraint annotations. Spring Boot 3.x includes the Hibernate Validator implementation. Annotate fields on your request DTOs — Spring checks them before the controller method runs when you add <code>@Valid</code> to the parameter.</p>
+  <table>
+    <tr><th>Annotation</th><th>Validates</th><th>Example</th></tr>
+    <tr><td><code>@NotNull</code></td><td>Not null (allows blank string)</td><td>Any object field</td></tr>
+    <tr><td><code>@NotBlank</code></td><td>Not null AND not empty/whitespace</td><td>name, rollNumber</td></tr>
+    <tr><td><code>@NotEmpty</code></td><td>Not null AND not empty (allows whitespace)</td><td>Lists, arrays</td></tr>
+    <tr><td><code>@Size(min, max)</code></td><td>String/collection length range</td><td><code>@Size(min=2, max=100)</code></td></tr>
+    <tr><td><code>@Min / @Max</code></td><td>Numeric min/max value</td><td><code>@Min(0) @Max(100)</code></td></tr>
+    <tr><td><code>@Email</code></td><td>Valid email format</td><td>email field</td></tr>
+    <tr><td><code>@Pattern</code></td><td>Regex match</td><td>rollNumber format</td></tr>
+    <tr><td><code>@Positive</code></td><td>Number > 0</td><td>IDs, counts</td></tr>
+    <tr><td><code>@Future</code></td><td>Date is in the future</td><td>examDate</td></tr>
+  </table>
+  <div class="section-label"><span class="num">2</span> Examples</div>
+  <div class="examples">
+    <div class="example">
+      <div class="example-header"><span class="example-title">Annotated request record</span><span class="ex-badge ex-simple">Simple</span></div>
+      <pre><code class="language-java">// Java 21 record — annotations go on the compact constructor parameters
+public record CreateStudentRequest(
+
+    @NotBlank(message = "Roll number is required")
+    @Pattern(regexp = "^S\\d{3}$", message = "Roll number must be S followed by 3 digits")
+    String rollNumber,
+
+    @NotBlank(message = "Name is required")
+    @Size(min = 2, max = 100, message = "Name must be 2–100 characters")
+    String name,
+
+    @NotBlank(message = "Email is required")
+    @Email(message = "Must be a valid email address")
+    String email
+) {}</code></pre>
+    </div>
+  </div>
+</div>
+
+<!-- @VALID -->
+<div class="topic" id="valid">
+  <div class="topic-title">@Valid on @RequestBody</div>
+  <div class="in-project-note">Every POST and PUT controller method has @Valid on the @RequestBody parameter — triggers Bean Validation before the method body executes.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>Add <code>@Valid</code> (or <code>@Validated</code>) before <code>@RequestBody</code> to trigger validation. If any constraint fails, Spring throws <code>MethodArgumentNotValidException</code> before your method runs. The <code>GlobalExceptionHandler</code> catches this and returns a 400 with field error details. No try/catch in your controller needed.</p>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">controller/AdminController.java</div>
+    <pre><code class="language-java">@PostMapping("/students")
+@ResponseStatus(HttpStatus.CREATED)
+public StudentDTO createStudent(
+        @Valid @RequestBody CreateStudentRequest request) {
+    // Spring validates request BEFORE this line runs
+    // If invalid → MethodArgumentNotValidException → GlobalExceptionHandler → 400
+    return studentService.createStudent(request);
+}
+
+@PutMapping("/students/{id}")
+public StudentDTO updateStudent(
+        @PathVariable Long id,
+        @Valid @RequestBody UpdateStudentRequest request) {
+    return studentService.updateStudent(id, request);
+}
+
+@PostMapping("/students/{id}/marks")
+@ResponseStatus(HttpStatus.CREATED)
+public MarkDTO createMark(
+        @PathVariable Long id,
+        @Valid @RequestBody CreateMarkRequest request) {
+    return resultService.createMark(id, request);
+}</code></pre>
+  </div>
+</div>
+
+<!-- @VALIDATED -->
+<div class="topic" id="validated">
+  <div class="topic-title">@Validated on Controllers</div>
+  <div class="in-project-note">@Validated on the controller class enables method-level validation — validates @PathVariable and @RequestParam constraints, not just @RequestBody.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p><code>@Validated</code> (Spring's version) on the class enables AOP-based method validation, allowing constraints on <code>@PathVariable</code>, <code>@RequestParam</code>, and method return values. <code>@Valid</code> (Jakarta's version) only works on <code>@RequestBody</code>. For controller parameters other than body, you need <code>@Validated</code> on the class.</p>
+  <div class="section-label"><span class="num">2</span> Examples</div>
+  <div class="examples">
+    <div class="example">
+      <div class="example-header"><span class="example-title">Validate path variables and query params</span><span class="ex-badge ex-medium">Medium</span></div>
+      <pre><code class="language-java">@RestController
+@RequestMapping("/api/admin")
+@Validated   // ← enables method-level validation (not just @RequestBody)
+public class AdminController {
+
+    // @Positive validated because @Validated is on the class
+    @GetMapping("/students/{id}")
+    public StudentDTO getStudent(
+            @PathVariable @Positive(message = "ID must be positive") Long id) {
+        return studentService.getStudentById(id);
+    }
+
+    @GetMapping("/students")
+    public Page&lt;StudentDTO&gt; list(
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size) {
+        return studentService.getAllStudents(PageRequest.of(page, size));
+    }
+}</code></pre>
+    </div>
+  </div>
+</div>
+
+<!-- CUSTOM @MARKRANGE -->
+<div class="topic" id="custom-constraint">
+  <div class="topic-title">Custom @MarkRange Constraint</div>
+  <div class="in-project-note">Scores must be 0–100. Rather than @Min(0) @Max(100) on every field, a single @MarkRange annotation encapsulates the rule and gives a clear, domain-specific error message.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>A custom constraint needs two things: an <code>@interface</code> annotation (with <code>@Constraint(validatedBy=)</code>) and a <code>ConstraintValidator&lt;A, T&gt;</code> implementation. The annotation goes on the field; the validator contains the logic. Register by reference — Spring wires the validator as a bean so it can inject repositories.</p>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">validation/MarkRange.java · validation/MarkRangeValidator.java</div>
+    <pre><code class="language-java">// 1. Define the annotation
+@Target({ElementType.FIELD, ElementType.PARAMETER})
+@Retention(RetentionPolicy.RUNTIME)
+@Constraint(validatedBy = MarkRangeValidator.class)
+@Documented
+public @interface MarkRange {
+    String message() default "Score must be between 0 and 100";
+    Class&lt;?&gt;[] groups() default {};
+    Class&lt;? extends Payload&gt;[] payload() default {};
+}
+
+// 2. Implement the validator
+@Component   // Spring bean — can inject repositories if needed
+public class MarkRangeValidator implements ConstraintValidator&lt;MarkRange, Integer&gt; {
+
+    @Override
+    public boolean isValid(Integer value, ConstraintValidatorContext context) {
+        if (value == null) return false;  // @NotNull handles null separately
+
+        if (value &lt; 0 || value &gt; 100) {
+            context.disableDefaultConstraintViolation();
+            context.buildConstraintViolationWithTemplate(
+                "Score %d is invalid — must be between 0 and 100".formatted(value))
+                .addConstraintViolation();
+            return false;
+        }
+        return true;
+    }
+}
+
+// 3. Use on request records
+public record CreateMarkRequest(
+    @NotNull Long subjectId,
+
+    @NotNull
+    @MarkRange   // ← custom annotation
+    Integer score,
+
+    LocalDate examDate
+) {}</code></pre>
+  </div>
+</div>
+
+<!-- UNIQUE ROLL NUMBER -->
+<div class="topic" id="unique-roll">
+  <div class="topic-title">Custom @UniqueRollNumber — DB Uniqueness Check</div>
+  <div class="in-project-note">Roll numbers must be unique in the DB. @UniqueRollNumber injects StudentRepository and checks before the record is saved — gives a clear validation error instead of a DB constraint violation.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>Because the validator is a Spring bean (<code>@Component</code>), it can inject repositories and do DB lookups. This allows uniqueness checks at the validation layer — the caller gets a clean 400 with field-level error instead of a 500 from a DB constraint violation.</p>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">validation/UniqueRollNumber.java · UniqueRollNumberValidator.java</div>
+    <pre><code class="language-java">// Annotation
+@Target(ElementType.FIELD)
+@Retention(RetentionPolicy.RUNTIME)
+@Constraint(validatedBy = UniqueRollNumberValidator.class)
+public @interface UniqueRollNumber {
+    String message() default "Roll number already exists";
+    Class&lt;?&gt;[] groups() default {};
+    Class&lt;? extends Payload&gt;[] payload() default {};
+}
+
+// Validator — Spring injects the repository
+@Component
+public class UniqueRollNumberValidator
+        implements ConstraintValidator&lt;UniqueRollNumber, String&gt; {
+
+    private final StudentRepository studentRepository;
+
+    public UniqueRollNumberValidator(StudentRepository studentRepository) {
+        this.studentRepository = studentRepository;
+    }
+
+    @Override
+    public boolean isValid(String rollNumber, ConstraintValidatorContext ctx) {
+        if (rollNumber == null || rollNumber.isBlank()) return true; // @NotBlank handles this
+
+        boolean exists = studentRepository.existsByRollNumber(rollNumber);
+        if (exists) {
+            ctx.disableDefaultConstraintViolation();
+            ctx.buildConstraintViolationWithTemplate(
+                "Roll number '%s' is already taken".formatted(rollNumber))
+                .addConstraintViolation();
+        }
+        return !exists;
+    }
+}
+
+// Usage on the request record
+public record CreateStudentRequest(
+    @NotBlank
+    @Pattern(regexp = "^S\\d{3}$")
+    @UniqueRollNumber   // DB check
+    String rollNumber,
+
+    @NotBlank @Size(min = 2, max = 100) String name,
+    @NotBlank @Email String email
+) {}</code></pre>
+  </div>
+</div>
+
+<!-- VALIDATION GROUPS -->
+<div class="topic" id="groups">
+  <div class="topic-title">Validation Groups</div>
+  <div class="in-project-note">OnCreate group applies @UniqueRollNumber — roll number must be unique when creating. OnUpdate group skips it — an update doesn't need to check its own existing roll number.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>Validation groups let you activate different constraints depending on the operation. Define marker interfaces (<code>OnCreate</code>, <code>OnUpdate</code>). Annotate constraints with <code>groups = OnCreate.class</code>. Use <code>@Validated(OnCreate.class)</code> on the controller method to activate only that group's constraints.</p>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">validation/ValidationGroups.java · controller/AdminController.java</div>
+    <pre><code class="language-java">// 1. Define group marker interfaces
+public interface ValidationGroups {
+    interface OnCreate {}
+    interface OnUpdate {}
+}
+
+// 2. Apply groups to constraints on the record
+public record StudentRequest(
+
+    @NotBlank(groups = {OnCreate.class, OnUpdate.class})
+    @UniqueRollNumber(groups = OnCreate.class)   // only checked on create
+    String rollNumber,
+
+    @NotBlank(groups = {OnCreate.class, OnUpdate.class})
+    @Size(min = 2, max = 100, groups = {OnCreate.class, OnUpdate.class})
+    String name,
+
+    @NotBlank(groups = {OnCreate.class, OnUpdate.class})
+    @Email(groups = {OnCreate.class, OnUpdate.class})
+    String email
+) {}
+
+// 3. Activate the right group on the controller
+@PostMapping("/students")
+@ResponseStatus(HttpStatus.CREATED)
+public StudentDTO create(
+        @Validated(OnCreate.class) @RequestBody StudentRequest request) {
+    // @UniqueRollNumber fires here — creates are checked for uniqueness
+    return studentService.createStudent(request);
+}
+
+@PutMapping("/students/{id}")
+public StudentDTO update(
+        @PathVariable Long id,
+        @Validated(OnUpdate.class) @RequestBody StudentRequest request) {
+    // @UniqueRollNumber does NOT fire here — updating doesn't need uniqueness check
+    return studentService.updateStudent(id, request);
+}</code></pre>
+  </div>
+</div>
+
+<!-- ERROR RESPONSE -->
+<div class="topic" id="error-response">
+  <div class="topic-title">Validation Error Response</div>
+  <div class="in-project-note">GlobalExceptionHandler catches MethodArgumentNotValidException and returns a 400 ProblemDetail with a map of field → error message so the frontend can highlight the exact invalid fields.</div>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">exception/GlobalExceptionHandler.java</div>
+    <pre><code class="language-java">@ExceptionHandler(MethodArgumentNotValidException.class)
+public ProblemDetail handleValidation(MethodArgumentNotValidException ex,
+                                       HttpServletRequest request) {
+    var problem = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
+    problem.setTitle("Validation Failed");
+    problem.setInstance(URI.create(request.getRequestURI()));
+
+    // Collect all field errors into a map
+    Map&lt;String, String&gt; fieldErrors = new LinkedHashMap&lt;&gt;();
+    ex.getBindingResult().getFieldErrors()
+        .forEach(e -> fieldErrors.put(e.getField(), e.getDefaultMessage()));
+
+    // Collect global errors (class-level constraints)
+    List&lt;String&gt; globalErrors = ex.getBindingResult().getGlobalErrors()
+        .stream().map(DefaultMessageSourceResolvable::getDefaultMessage).toList();
+
+    problem.setProperty("errors", fieldErrors);
+    if (!globalErrors.isEmpty()) {
+        problem.setProperty("globalErrors", globalErrors);
+    }
+    return problem;
+}
+
+// Example response for POST /api/admin/students with bad data:
+// {
+//   "title": "Validation Failed",
+//   "status": 400,
+//   "instance": "/api/admin/students",
+//   "errors": {
+//     "rollNumber": "Roll number 'ABC' is invalid — must match S followed by 3 digits",
+//     "email":      "Must be a valid email address",
+//     "name":       "Name must be 2–100 characters"
+//   }
+// }</code></pre>
+  </div>
+</div>
+
+<div class="page-nav">
+  <a href="08-spring-scheduling.html">← 08 · Scheduling</a>
+  <a href="10-config-properties.html">10 · Config Properties →</a>
+</div>
+</main>
+</div>
+<footer>Student Portal · Java 21 + Spring Boot 3.3.12</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+<script>
+const links = document.querySelectorAll('.sidebar-link');
+const topics = document.querySelectorAll('.topic');
+const obs = new IntersectionObserver(e => {
+  e.forEach(entry => {
+    if (entry.isIntersecting) {
+      links.forEach(l => l.classList.remove('active'));
+      const a = document.querySelector(`.sidebar-link[href="#${entry.target.id}"]`);
+      if (a) { a.classList.add('active'); a.scrollIntoView({block:'nearest'}); }
+    }
+  });
+}, {rootMargin:'-49px 0px -60% 0px'});
+topics.forEach(t => obs.observe(t));
+</script>
+</body>
+</html>

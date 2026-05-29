@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Spring Cache — Student Portal</title>
+<link rel="stylesheet" href="gh.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css"/>
+</head>
+<body>
+<header class="gh-header">
+  <div class="gh-logo"><svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>Student Portal</div>
+  <span class="gh-breadcrumb"><a href="../index.html">tutorials</a> / <a href="index.html">springboot</a> / <span>spring-cache</span></span>
+</header>
+<div class="layout">
+<nav class="sidebar">
+  <div class="sidebar-nav-header"><a href="index.html">← All Modules</a></div>
+  <div class="sidebar-section">Topics</div>
+  <a class="sidebar-link" href="#overview">How Spring Cache Works</a>
+  <a class="sidebar-link" href="#enablecaching">@EnableCaching</a>
+  <a class="sidebar-link" href="#rediscachemanager">RedisCacheManager</a>
+  <a class="sidebar-link" href="#cacheable">@Cacheable</a>
+  <a class="sidebar-link" href="#cacheput">@CachePut</a>
+  <a class="sidebar-link" href="#cacheevict">@CacheEvict</a>
+  <a class="sidebar-link" href="#scheduled-flush">Scheduled Full Flush</a>
+  <a class="sidebar-link" href="#serialization">JSON Serialisation</a>
+  <div class="sidebar-section">All Modules</div>
+  <div class="sidebar-modules">
+    <a class="mod-link" href="01-core-ioc-di.html">01 · Core IoC &amp; DI</a>
+    <a class="mod-link" href="02-spring-mvc.html">02 · Spring MVC</a>
+    <a class="mod-link" href="03-spring-security.html">03 · Security</a>
+    <a class="mod-link" href="04-spring-data-jpa.html">04 · Data JPA</a>
+    <a class="mod-link" href="05-spring-aop.html">05 · AOP</a>
+    <a class="mod-link current-mod" href="06-spring-cache.html">06 · Cache</a>
+    <a class="mod-link" href="07-spring-events.html">07 · Events</a>
+    <a class="mod-link" href="08-spring-scheduling.html">08 · Scheduling</a>
+    <a class="mod-link" href="09-spring-validation.html">09 · Validation</a>
+    <a class="mod-link" href="10-config-properties.html">10 · Config Properties</a>
+    <a class="mod-link" href="11-actuator-micrometer.html">11 · Actuator</a>
+    <a class="mod-link" href="12-testing.html">12 · Testing</a>
+    <a class="mod-link" href="13-virtual-threads-restclient.html">13 · Virtual Threads</a>
+  </div>
+</nav>
+<main class="main">
+<div class="ver-header">
+  <div class="ver-meta"><span class="badge badge-core">Cache</span><span style="font-size:0.875rem;color:#57606a">Spring Cache · Redis 7 · Spring Boot 3.3.12</span></div>
+  <h1>Spring Cache</h1>
+  <p>Spring's caching abstraction sits between your service and the database. Add <code>@Cacheable</code> to a method and results are stored in Redis for 5 minutes — subsequent calls skip the DB entirely. <code>@CachePut</code> refreshes the cache on update. <code>@CacheEvict</code> removes stale entries on delete.</p>
+</div>
+
+<!-- OVERVIEW -->
+<div class="topic" id="overview">
+  <div class="topic-title">How Spring Cache Works</div>
+  <div class="in-project-note">Spring wraps @Cacheable methods in a proxy. On call: check cache first → if hit, return cached value; if miss, call real method and store result.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>Spring Cache is an <strong>abstraction</strong> — the same annotations work with any backing store (Redis, Caffeine, EhCache, ConcurrentHashMap). The annotations work via AOP proxies. Key points:</p>
+  <table>
+    <tr><th>Annotation</th><th>When it fires</th><th>What it does</th></tr>
+    <tr><td><code>@Cacheable</code></td><td>Before the method</td><td>Return cached value if present; else call method + cache result</td></tr>
+    <tr><td><code>@CachePut</code></td><td>After the method</td><td>Always calls the method + updates the cache with the result</td></tr>
+    <tr><td><code>@CacheEvict</code></td><td>Before or after</td><td>Removes one or all entries from the cache</td></tr>
+    <tr><td><code>@Caching</code></td><td>—</td><td>Group multiple cache annotations on one method</td></tr>
+  </table>
+  <p>⚠️ Self-invocation problem: if <code>ServiceA.methodA()</code> calls <code>this.methodB()</code> where methodB is <code>@Cacheable</code>, the cache is bypassed — Spring's proxy is not involved. Always call through the proxy (inject the service into itself, or use <code>ApplicationContext</code>).</p>
+</div>
+
+<!-- ENABLECACHING -->
+<div class="topic" id="enablecaching">
+  <div class="topic-title">@EnableCaching</div>
+  <div class="in-project-note">Placed on CacheConfig — activates all Spring Cache annotations project-wide.</div>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">config/CacheConfig.java</div>
+    <pre><code class="language-java">@Configuration
+@EnableCaching   // ← activates @Cacheable, @CachePut, @CacheEvict globally
+public class CacheConfig {
+    // RedisCacheManager bean defined here
+}</code></pre>
+  </div>
+</div>
+
+<!-- REDISCACHEMANAGER -->
+<div class="topic" id="rediscachemanager">
+  <div class="topic-title">RedisCacheManager with TTL</div>
+  <div class="in-project-note">Configured with 5-minute TTL for "results" cache and 10-minute TTL for "students" cache. JSON serialisation so cached data is human-readable in Redis CLI.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p><code>RedisCacheManager</code> connects Spring's cache abstraction to Redis. Key configuration choices: TTL (how long cached entries live), serialisation (how values are stored — use JSON for readability and cross-service sharing), and null value handling (disable to avoid caching null results).</p>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">config/CacheConfig.java</div>
+    <pre><code class="language-java">@Configuration
+@EnableCaching
+public class CacheConfig {
+
+    @Bean
+    public CacheManager cacheManager(RedisConnectionFactory factory) {
+        // Default config — used for any cache not explicitly configured
+        var defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
+            .entryTtl(Duration.ofMinutes(5))
+            .disableCachingNullValues()
+            .serializeKeysWith(RedisSerializationContext.SerializationPair
+                .fromSerializer(new StringRedisSerializer()))
+            .serializeValuesWith(RedisSerializationContext.SerializationPair
+                .fromSerializer(new GenericJackson2JsonRedisSerializer()));
+
+        return RedisCacheManager.builder(factory)
+            .cacheDefaults(defaultConfig)
+            // Per-cache TTL overrides
+            .withCacheConfiguration("results",
+                defaultConfig.entryTtl(Duration.ofMinutes(5)))
+            .withCacheConfiguration("students",
+                defaultConfig.entryTtl(Duration.ofMinutes(10)))
+            .withCacheConfiguration("subjects",
+                defaultConfig.entryTtl(Duration.ofHours(1)))  // subjects rarely change
+            .build();
+    }
+}</code></pre>
+  </div>
+</div>
+
+<!-- CACHEABLE -->
+<div class="topic" id="cacheable">
+  <div class="topic-title">@Cacheable</div>
+  <div class="in-project-note">getResults(studentId) is @Cacheable — first call hits DB and caches result; subsequent calls return from Redis in &lt;1ms until TTL expires.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p><code>@Cacheable</code> is the most common annotation. The <code>key</code> expression (SpEL) determines the Redis key. The <code>condition</code> expression can skip caching based on parameters. The <code>unless</code> expression can skip caching based on the result. Default key = all parameters.</p>
+  <div class="section-label"><span class="num">2</span> Examples</div>
+  <div class="examples">
+    <div class="example">
+      <div class="example-header"><span class="example-title">Basic @Cacheable</span><span class="ex-badge ex-simple">Simple</span></div>
+      <pre><code class="language-java">// Redis key: "results::42"  (cache name + "::" + key expression)
+@Cacheable(value = "results", key = "#studentId")
+public List&lt;MarkDTO&gt; getResults(Long studentId) {
+    // This DB query only runs on cache miss
+    return markRepository.findByStudentId(studentId)
+        .stream().map(this::toDTO).toList();
+}</code></pre>
+    </div>
+    <div class="example">
+      <div class="example-header"><span class="example-title">Conditional caching</span><span class="ex-badge ex-medium">Medium</span></div>
+      <pre><code class="language-java">// Only cache if studentId > 0 (condition = before method)
+// Don't cache if result is empty (unless = after method, based on return value)
+@Cacheable(value = "results",
+           key = "#studentId",
+           condition = "#studentId != null",
+           unless = "#result.isEmpty()")
+public List&lt;MarkDTO&gt; getResults(Long studentId) {
+    return markRepository.findByStudentId(studentId)
+        .stream().map(this::toDTO).toList();
+}</code></pre>
+    </div>
+  </div>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">service/ResultService.java</div>
+    <pre><code class="language-java">@Service
+public class ResultService {
+
+    private final MarkRepository markRepository;
+
+    @Cacheable(value = "results", key = "#studentId")
+    public List&lt;MarkDTO&gt; getResults(Long studentId) {
+        log.debug("Cache MISS for studentId={} — querying DB", studentId);
+        return markRepository.findByStudentId(studentId)
+            .stream().map(this::toDTO).toList();
+        // Second call with same studentId: log line never prints — served from Redis
+    }
+
+    @Cacheable(value = "students", key = "#id")
+    public StudentDTO getStudentById(Long id) {
+        return studentRepository.findById(id)
+            .filter(s -> !s.isDeleted())
+            .map(this::toStudentDTO)
+            .orElseThrow(() -> new StudentNotFoundException(id));
+    }
+}</code></pre>
+  </div>
+</div>
+
+<!-- CACHEPUT -->
+<div class="topic" id="cacheput">
+  <div class="topic-title">@CachePut</div>
+  <div class="in-project-note">When admin updates a mark, @CachePut updates the Redis entry immediately — so the student sees fresh data without waiting for TTL to expire.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p><code>@CachePut</code> <em>always</em> calls the method and <em>always</em> updates the cache. Unlike <code>@Cacheable</code>, it never skips the method. Use it on update methods to keep the cache in sync. The key must match what <code>@Cacheable</code> uses on the read method.</p>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">service/ResultService.java</div>
+    <pre><code class="language-java">// key must match @Cacheable key on getResults()
+@CachePut(value = "results", key = "#result.studentId()")
+public List&lt;MarkDTO&gt; updateMark(Long markId, UpdateMarkRequest request) {
+    var mark = markRepository.findById(markId)
+        .orElseThrow(() -> new MarkNotFoundException(markId));
+    mark.setScore(request.score());
+    markRepository.save(mark);
+
+    // Return the full updated list — this becomes the new cached value
+    return markRepository.findByStudentId(mark.getStudent().getId())
+        .stream().map(this::toDTO).toList();
+}
+// After this: Redis key "results::&lt;studentId&gt;" holds the fresh list</code></pre>
+  </div>
+</div>
+
+<!-- CACHEEVICT -->
+<div class="topic" id="cacheevict">
+  <div class="topic-title">@CacheEvict</div>
+  <div class="in-project-note">Deleting a mark or student evicts their cache entry. The next read goes to DB and re-populates the cache fresh.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p><code>@CacheEvict</code> removes entries from the cache. <code>allEntries = true</code> clears the entire named cache. <code>beforeInvocation = true</code> evicts before the method runs (useful to ensure stale data is never served even if the method fails).</p>
+  <div class="section-label"><span class="num">2</span> Examples</div>
+  <div class="examples">
+    <div class="example">
+      <div class="example-header"><span class="example-title">Evict single entry</span><span class="ex-badge ex-simple">Simple</span></div>
+      <pre><code class="language-java">@CacheEvict(value = "results", key = "#studentId")
+public void deleteAllMarksForStudent(Long studentId) {
+    markRepository.deleteByStudentId(studentId);
+    // Cache entry "results::&lt;studentId&gt;" is removed after this returns
+}</code></pre>
+    </div>
+    <div class="example">
+      <div class="example-header"><span class="example-title">Evict all + multiple caches</span><span class="ex-badge ex-medium">Medium</span></div>
+      <pre><code class="language-java">// Evict from both caches when a student is deleted
+@Caching(evict = {
+    @CacheEvict(value = "results",  key = "#id"),
+    @CacheEvict(value = "students", key = "#id")
+})
+public void softDeleteStudent(Long id) {
+    var student = studentRepository.findById(id)
+        .orElseThrow(() -> new StudentNotFoundException(id));
+    student.setDeleted(true);
+    studentRepository.save(student);
+}</code></pre>
+    </div>
+  </div>
+</div>
+
+<!-- SCHEDULED FLUSH -->
+<div class="topic" id="scheduled-flush">
+  <div class="topic-title">Scheduled Full Cache Flush</div>
+  <div class="in-project-note">Every night at midnight, all cache entries are cleared so the next day starts with fresh data from the DB — prevents long-lived stale data.</div>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">scheduler/CacheRefreshScheduler.java</div>
+    <pre><code class="language-java">@Component
+public class CacheRefreshScheduler {
+
+    private final CacheManager cacheManager;
+
+    public CacheRefreshScheduler(CacheManager cacheManager) {
+        this.cacheManager = cacheManager;
+    }
+
+    // Every night at midnight — full cache flush
+    @Scheduled(cron = "0 0 0 * * *")
+    @CacheEvict(value = {"results", "students", "subjects"}, allEntries = true)
+    public void flushAllCaches() {
+        log.info("[CACHE] Nightly full flush completed");
+    }
+
+    // Every 5 minutes — refresh subjects cache (rarely changes but keep it fresh)
+    @Scheduled(fixedRate = 300_000)
+    public void refreshSubjectsCache() {
+        var cache = cacheManager.getCache("subjects");
+        if (cache != null) cache.clear();
+    }
+}</code></pre>
+  </div>
+</div>
+
+<!-- SERIALIZATION -->
+<div class="topic" id="serialization">
+  <div class="topic-title">JSON Serialisation in Redis</div>
+  <div class="in-project-note">GenericJackson2JsonRedisSerializer stores cache values as readable JSON in Redis — you can inspect them with redis-cli and they survive app restarts.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>By default, Spring uses Java serialisation for Redis values — produces binary, not readable. <code>GenericJackson2JsonRedisSerializer</code> stores values as JSON with a <code>@class</code> field for type information. This enables cross-service cache sharing and human-readable inspection. Values must be Jackson-serialisable (no cycles, proper getters).</p>
+  <div class="section-label"><span class="num">2</span> Examples</div>
+  <div class="examples">
+    <div class="example">
+      <div class="example-header"><span class="example-title">What the Redis entry looks like</span><span class="ex-badge ex-medium">Medium</span></div>
+      <pre><code class="language-java">// Redis key:   results::42
+// Redis value (JSON):
+// {
+//   "@class": "java.util.ArrayList",
+//   "0": {
+//     "@class": "com.studentresults.dto.MarkDTO",
+//     "id": 1,
+//     "subjectName": "MATHS",
+//     "score": 87,
+//     "grade": "A"
+//   },
+//   ...
+// }
+
+// Inspect via redis-cli:
+// redis-cli GET "results::42"</code></pre>
+    </div>
+  </div>
+</div>
+
+<div class="page-nav">
+  <a href="05-spring-aop.html">← 05 · AOP</a>
+  <a href="07-spring-events.html">07 · Events →</a>
+</div>
+</main>
+</div>
+<footer>Student Portal · Java 21 + Spring Boot 3.3.12</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+<script>
+const links = document.querySelectorAll('.sidebar-link');
+const topics = document.querySelectorAll('.topic');
+const obs = new IntersectionObserver(e => {
+  e.forEach(entry => {
+    if (entry.isIntersecting) {
+      links.forEach(l => l.classList.remove('active'));
+      const a = document.querySelector(`.sidebar-link[href="#${entry.target.id}"]`);
+      if (a) { a.classList.add('active'); a.scrollIntoView({block:'nearest'}); }
+    }
+  });
+}, {rootMargin:'-49px 0px -60% 0px'});
+topics.forEach(t => obs.observe(t));
+</script>
+</body>
+</html>

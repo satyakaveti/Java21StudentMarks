@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Spring Scheduling — Student Portal</title>
+<link rel="stylesheet" href="gh.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css"/>
+</head>
+<body>
+<header class="gh-header">
+  <div class="gh-logo"><svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>Student Portal</div>
+  <span class="gh-breadcrumb"><a href="../index.html">tutorials</a> / <a href="index.html">springboot</a> / <span>spring-scheduling</span></span>
+</header>
+<div class="layout">
+<nav class="sidebar">
+  <div class="sidebar-nav-header"><a href="index.html">← All Modules</a></div>
+  <div class="sidebar-section">Topics</div>
+  <a class="sidebar-link" href="#enablescheduling">@EnableScheduling</a>
+  <a class="sidebar-link" href="#cron">@Scheduled cron</a>
+  <a class="sidebar-link" href="#fixeddelay">@Scheduled fixedDelay</a>
+  <a class="sidebar-link" href="#fixedrate">@Scheduled fixedRate</a>
+  <a class="sidebar-link" href="#digest">Daily Digest Email</a>
+  <a class="sidebar-link" href="#jwtcleanup">JWT Blacklist Cleanup</a>
+  <a class="sidebar-link" href="#cacherefresh">Cache Refresh</a>
+  <div class="sidebar-section">All Modules</div>
+  <div class="sidebar-modules">
+    <a class="mod-link" href="01-core-ioc-di.html">01 · Core IoC &amp; DI</a>
+    <a class="mod-link" href="02-spring-mvc.html">02 · Spring MVC</a>
+    <a class="mod-link" href="03-spring-security.html">03 · Security</a>
+    <a class="mod-link" href="04-spring-data-jpa.html">04 · Data JPA</a>
+    <a class="mod-link" href="05-spring-aop.html">05 · AOP</a>
+    <a class="mod-link" href="06-spring-cache.html">06 · Cache</a>
+    <a class="mod-link" href="07-spring-events.html">07 · Events</a>
+    <a class="mod-link current-mod" href="08-spring-scheduling.html">08 · Scheduling</a>
+    <a class="mod-link" href="09-spring-validation.html">09 · Validation</a>
+    <a class="mod-link" href="10-config-properties.html">10 · Config Properties</a>
+    <a class="mod-link" href="11-actuator-micrometer.html">11 · Actuator</a>
+    <a class="mod-link" href="12-testing.html">12 · Testing</a>
+    <a class="mod-link" href="13-virtual-threads-restclient.html">13 · Virtual Threads</a>
+  </div>
+</nav>
+<main class="main">
+<div class="ver-header">
+  <div class="ver-meta"><span class="badge badge-core">Scheduling</span><span style="font-size:0.875rem;color:#57606a">Spring Boot 3.3.12</span></div>
+  <h1>Spring Scheduling</h1>
+  <p>Spring's <code>@Scheduled</code> annotation turns any Spring bean method into a background job. This project uses three scheduled tasks: a daily digest email to students at 7AM on weekdays, a 60-second JWT blacklist cleanup, and a 5-minute subject cache refresh.</p>
+</div>
+
+<!-- ENABLESCHEDULING -->
+<div class="topic" id="enablescheduling">
+  <div class="topic-title">@EnableScheduling</div>
+  <div class="in-project-note">Placed on a @Configuration class — activates the background scheduler thread pool that runs all @Scheduled methods.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>Without <code>@EnableScheduling</code>, all <code>@Scheduled</code> annotations are silently ignored. Place it on any <code>@Configuration</code> class. Spring creates a scheduled thread pool executor. Combined with <code>spring.threads.virtual.enabled=true</code> (Boot 3.2+), scheduled tasks run on virtual threads.</p>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">config/AsyncConfig.java (or any @Configuration)</div>
+    <pre><code class="language-java">@Configuration
+@EnableAsync
+@EnableScheduling   // ← activates all @Scheduled methods
+public class AsyncConfig {
+
+    @Bean(name = "virtualThreadExecutor")
+    public Executor virtualThreadExecutor() {
+        return Executors.newVirtualThreadPerTaskExecutor();
+    }
+}
+
+// In test profile — disable scheduled tasks so they don't run during tests
+// application-test.yml:
+// spring:
+//   task:
+//     scheduling:
+//       enabled: false</code></pre>
+  </div>
+</div>
+
+<!-- CRON -->
+<div class="topic" id="cron">
+  <div class="topic-title">@Scheduled(cron = "...")</div>
+  <div class="in-project-note">Used for the daily digest email — runs at exactly 7AM Monday to Friday. Cron gives precise calendar-based scheduling.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>Spring cron format has 6 fields: <code>second minute hour day-of-month month day-of-week</code>. Supports standard cron operators: <code>*</code> (every), <code>?</code> (any), <code>-</code> (range), <code>,</code> (list), <code>/</code> (step). Spring also supports macros: <code>@yearly</code>, <code>@monthly</code>, <code>@weekly</code>, <code>@daily</code>, <code>@hourly</code>.</p>
+  <div class="section-label"><span class="num">2</span> Examples</div>
+  <div class="examples">
+    <div class="example">
+      <div class="example-header"><span class="example-title">Common cron expressions</span><span class="ex-badge ex-simple">Simple</span></div>
+      <pre><code class="language-java">// Format: "second minute hour day month weekday"
+
+@Scheduled(cron = "0 0 7 * * MON-FRI")   // 7:00 AM weekdays
+@Scheduled(cron = "0 0 0 * * *")          // midnight every day
+@Scheduled(cron = "0 0 * * * *")          // top of every hour
+@Scheduled(cron = "0 */30 * * * *")       // every 30 minutes
+@Scheduled(cron = "0 0 8 1 * *")          // 8AM on 1st of every month
+
+// From properties file — easier to change per environment
+@Scheduled(cron = "${app.digest.cron:0 0 7 * * MON-FRI}")
+public void dailyDigest() { ... }</code></pre>
+    </div>
+    <div class="example">
+      <div class="example-header"><span class="example-title">Cron with timezone</span><span class="ex-badge ex-medium">Medium</span></div>
+      <pre><code class="language-java">// Run at 7AM IST (Indian Standard Time) regardless of server timezone
+@Scheduled(cron = "0 0 7 * * MON-FRI", zone = "Asia/Kolkata")
+public void dailyDigestIST() {
+    digestService.sendDailyEmails();
+}</code></pre>
+    </div>
+  </div>
+</div>
+
+<!-- FIXED DELAY -->
+<div class="topic" id="fixeddelay">
+  <div class="topic-title">@Scheduled(fixedDelay = ...)</div>
+  <div class="in-project-note">JWT blacklist cleanup uses fixedDelay — waits 60 seconds after the previous run completes before starting the next. Prevents overlap if cleanup takes longer than expected.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p><code>fixedDelay</code> waits N milliseconds after the <em>previous execution completes</em> before starting again. Use this when you want to ensure runs don't overlap — the gap between runs is always at least N ms. Pair with <code>initialDelay</code> to skip the first run on startup.</p>
+  <div class="section-label"><span class="num">2</span> Examples</div>
+  <div class="examples">
+    <div class="example">
+      <div class="example-header"><span class="example-title">fixedDelay vs fixedRate</span><span class="ex-badge ex-simple">Simple</span></div>
+      <pre><code class="language-java">// fixedDelay — gap of 60s AFTER previous run finishes
+// Run1 starts 0s, finishes 5s → Run2 starts at 65s
+@Scheduled(fixedDelay = 60_000)
+public void cleanupJwtBlacklist() { ... }
+
+// fixedRate — starts every 60s regardless of how long previous run took
+// Run1 starts 0s (takes 70s) → Run2 starts 60s (overlap!)
+@Scheduled(fixedRate = 60_000)
+public void pollExternalApi() { ... }
+// For fixedRate, use fixedRate + @Async if overlap is a concern</code></pre>
+    </div>
+    <div class="example">
+      <div class="example-header"><span class="example-title">With initialDelay</span><span class="ex-badge ex-medium">Medium</span></div>
+      <pre><code class="language-java">// Wait 30 seconds after app starts before first run, then every 60 seconds
+@Scheduled(fixedDelay = 60_000, initialDelay = 30_000)
+public void cleanupJwtBlacklist() {
+    var cutoff = Instant.now().minus(Duration.ofHours(24));
+    jwtBlacklistRepository.deleteExpiredBefore(cutoff);
+    log.debug("[SCHEDULER] JWT blacklist cleaned up");
+}</code></pre>
+    </div>
+  </div>
+</div>
+
+<!-- FIXED RATE -->
+<div class="topic" id="fixedrate">
+  <div class="topic-title">@Scheduled(fixedRate = ...)</div>
+  <div class="in-project-note">Subject cache refresh uses fixedRate — fires every 5 minutes on a fixed schedule regardless of when the previous refresh completed.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p><code>fixedRate</code> starts execution every N milliseconds from the previous start time. If execution takes longer than N ms, subsequent executions may queue up (run back-to-back to catch up). Best for lightweight tasks where predictable intervals matter more than preventing overlap.</p>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">scheduler/CacheRefreshScheduler.java</div>
+    <pre><code class="language-java">@Component
+@Profile("!test")   // don't run scheduled tasks during tests
+public class CacheRefreshScheduler {
+
+    private final CacheManager cacheManager;
+    private final SubjectRepository subjectRepository;
+
+    public CacheRefreshScheduler(CacheManager cacheManager,
+                                  SubjectRepository subjectRepository) {
+        this.cacheManager = cacheManager;
+        this.subjectRepository = subjectRepository;
+    }
+
+    // Refresh subject config cache every 5 minutes
+    @Scheduled(fixedRate = 300_000)
+    public void refreshSubjectsCache() {
+        var cache = cacheManager.getCache("subjects");
+        if (cache != null) {
+            cache.clear();
+            // Re-warm the cache
+            subjectRepository.findAll()
+                .forEach(s -> cache.put(s.getId(), s.getName()));
+        }
+        log.debug("[SCHEDULER] Subjects cache refreshed");
+    }
+}</code></pre>
+  </div>
+</div>
+
+<!-- DIGEST -->
+<div class="topic" id="digest">
+  <div class="topic-title">Daily Digest Email</div>
+  <div class="in-project-note">At 7AM Mon-Fri, sends every student a summary of their latest marks if they have pending unread results.</div>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">scheduler/DigestScheduler.java</div>
+    <pre><code class="language-java">@Component
+@Profile("!test")
+public class DigestScheduler {
+
+    private static final Logger log = LoggerFactory.getLogger(DigestScheduler.class);
+    private final StudentRepository studentRepository;
+    private final ResultService resultService;
+    private final EmailClient emailClient;
+
+    public DigestScheduler(StudentRepository studentRepository,
+                            ResultService resultService,
+                            EmailClient emailClient) {
+        this.studentRepository = studentRepository;
+        this.resultService = resultService;
+        this.emailClient = emailClient;
+    }
+
+    @Scheduled(cron = "0 0 7 * * MON-FRI", zone = "Asia/Kolkata")
+    public void sendDailyDigest() {
+        log.info("[DIGEST] Starting daily result digest...");
+
+        // Java 21 virtual thread executor handles the fan-out
+        var students = studentRepository.findAllActive();
+        int sent = 0;
+
+        for (var student : students) {
+            var summary = resultService.getSummaryForStudent(student.getId());
+            if (summary.hasUnreadResults()) {
+                emailClient.send(
+                    student.getEmail(),
+                    "Your Daily Results Summary — " + LocalDate.now(),
+                    buildDigestBody(student.getName(), summary));
+                sent++;
+            }
+        }
+        log.info("[DIGEST] Sent {} digest emails", sent);
+    }
+
+    private String buildDigestBody(String name, ResultSummaryDTO summary) {
+        return """
+            Hi %s,
+            Here's your results summary:
+            • Maths:   %d (%s)
+            • Science: %d (%s)
+            • English: %d (%s)
+            Total: %d | Average: %.1f
+            """.formatted(name,
+                summary.mathsScore(),    summary.mathsGrade(),
+                summary.scienceScore(),  summary.scienceGrade(),
+                summary.englishScore(),  summary.englishGrade(),
+                summary.totalScore(),    summary.average());
+    }
+}</code></pre>
+  </div>
+</div>
+
+<!-- JWT CLEANUP -->
+<div class="topic" id="jwtcleanup">
+  <div class="topic-title">JWT Blacklist Cleanup</div>
+  <div class="in-project-note">When a user logs out, their JWT is added to a blacklist table. This scheduler removes expired entries every 60 seconds to keep the table small.</div>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">scheduler/DigestScheduler.java — JWT cleanup</div>
+    <pre><code class="language-java">// In DigestScheduler or a dedicated SecurityScheduler
+@Scheduled(fixedDelay = 60_000, initialDelay = 60_000)
+public void cleanExpiredTokens() {
+    // Delete JWT blacklist entries older than 24 hours
+    var cutoff = LocalDateTime.now().minusHours(24);
+    int deleted = jwtBlacklistRepository.deleteByCreatedAtBefore(cutoff);
+    if (deleted > 0) {
+        log.debug("[SCHEDULER] Removed {} expired JWT blacklist entries", deleted);
+    }
+}</code></pre>
+  </div>
+</div>
+
+<!-- CACHE REFRESH -->
+<div class="topic" id="cacherefresh">
+  <div class="topic-title">Full Cache Refresh</div>
+  <div class="in-project-note">Every night at midnight all caches are cleared — a nightly reset ensures no cache entry survives longer than 24 hours even if individual evictions were missed.</div>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">scheduler/CacheRefreshScheduler.java — nightly flush</div>
+    <pre><code class="language-java">@Scheduled(cron = "0 0 0 * * *")   // midnight every day
+@CacheEvict(value = {"results", "students", "subjects"}, allEntries = true)
+public void nightlyFullCacheFlush() {
+    log.info("[SCHEDULER] Nightly cache flush — all entries cleared");
+    // The @CacheEvict runs after this method returns
+    // Next requests will re-populate from DB fresh
+}</code></pre>
+  </div>
+</div>
+
+<div class="page-nav">
+  <a href="07-spring-events.html">← 07 · Events</a>
+  <a href="09-spring-validation.html">09 · Validation →</a>
+</div>
+</main>
+</div>
+<footer>Student Portal · Java 21 + Spring Boot 3.3.12</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+<script>
+const links = document.querySelectorAll('.sidebar-link');
+const topics = document.querySelectorAll('.topic');
+const obs = new IntersectionObserver(e => {
+  e.forEach(entry => {
+    if (entry.isIntersecting) {
+      links.forEach(l => l.classList.remove('active'));
+      const a = document.querySelector(`.sidebar-link[href="#${entry.target.id}"]`);
+      if (a) { a.classList.add('active'); a.scrollIntoView({block:'nearest'}); }
+    }
+  });
+}, {rootMargin:'-49px 0px -60% 0px'});
+topics.forEach(t => obs.observe(t));
+</script>
+</body>
+</html>

@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Spring AOP — Student Portal</title>
+<link rel="stylesheet" href="gh.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css"/>
+</head>
+<body>
+<header class="gh-header">
+  <div class="gh-logo"><svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>Student Portal</div>
+  <span class="gh-breadcrumb"><a href="../index.html">tutorials</a> / <a href="index.html">springboot</a> / <span>spring-aop</span></span>
+</header>
+<div class="layout">
+<nav class="sidebar">
+  <div class="sidebar-nav-header"><a href="index.html">← All Modules</a></div>
+  <div class="sidebar-section">Topics</div>
+  <a class="sidebar-link" href="#concepts">AOP Concepts</a>
+  <a class="sidebar-link" href="#pointcut">@Pointcut</a>
+  <a class="sidebar-link" href="#around">@Around</a>
+  <a class="sidebar-link" href="#before">@Before</a>
+  <a class="sidebar-link" href="#afterreturning">@AfterReturning</a>
+  <a class="sidebar-link" href="#afterthrowing">@AfterThrowing</a>
+  <a class="sidebar-link" href="#after">@After</a>
+  <a class="sidebar-link" href="#custom-annotation">Custom @Auditable</a>
+  <a class="sidebar-link" href="#performance">Performance Aspect</a>
+  <a class="sidebar-link" href="#retry">Retry Aspect</a>
+  <div class="sidebar-section">All Modules</div>
+  <div class="sidebar-modules">
+    <a class="mod-link" href="01-core-ioc-di.html">01 · Core IoC &amp; DI</a>
+    <a class="mod-link" href="02-spring-mvc.html">02 · Spring MVC</a>
+    <a class="mod-link" href="03-spring-security.html">03 · Security</a>
+    <a class="mod-link" href="04-spring-data-jpa.html">04 · Data JPA</a>
+    <a class="mod-link current-mod" href="05-spring-aop.html">05 · AOP</a>
+    <a class="mod-link" href="06-spring-cache.html">06 · Cache</a>
+    <a class="mod-link" href="07-spring-events.html">07 · Events</a>
+    <a class="mod-link" href="08-spring-scheduling.html">08 · Scheduling</a>
+    <a class="mod-link" href="09-spring-validation.html">09 · Validation</a>
+    <a class="mod-link" href="10-config-properties.html">10 · Config Properties</a>
+    <a class="mod-link" href="11-actuator-micrometer.html">11 · Actuator</a>
+    <a class="mod-link" href="12-testing.html">12 · Testing</a>
+    <a class="mod-link" href="13-virtual-threads-restclient.html">13 · Virtual Threads</a>
+  </div>
+</nav>
+<main class="main">
+<div class="ver-header">
+  <div class="ver-meta"><span class="badge badge-aop">AOP</span><span style="font-size:0.875rem;color:#57606a">Spring AOP · Spring Boot 3.3.12</span></div>
+  <h1>Spring AOP</h1>
+  <p>Aspect-Oriented Programming separates cross-cutting concerns — audit logging, performance monitoring, retry logic — from business code. In this project, three aspects run transparently across service methods without a single line of audit or timing code inside the services themselves.</p>
+</div>
+
+<!-- CONCEPTS -->
+<div class="topic" id="concepts">
+  <div class="topic-title">AOP Concepts</div>
+  <div class="in-project-note">Spring AOP uses JDK dynamic proxies or CGLIB to intercept method calls on Spring beans. No bytecode weaving — only Spring-managed beans can be advised.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>Key terms:</p>
+  <table>
+    <tr><th>Term</th><th>Meaning</th><th>Example</th></tr>
+    <tr><td><strong>Aspect</strong></td><td>A class containing cross-cutting logic</td><td><code>AuditAspect</code>, <code>PerformanceAspect</code></td></tr>
+    <tr><td><strong>Advice</strong></td><td>The actual code that runs</td><td><code>@Around</code>, <code>@Before</code>, <code>@AfterThrowing</code></td></tr>
+    <tr><td><strong>Pointcut</strong></td><td>Which methods to intercept</td><td><code>execution(* com.studentresults.service.*.*(..))</code></td></tr>
+    <tr><td><strong>Join point</strong></td><td>A specific method call being intercepted</td><td><code>studentService.createStudent(request)</code></td></tr>
+    <tr><td><strong>Weaving</strong></td><td>Applying the aspect to the target</td><td>Spring wraps the bean in a proxy at startup</td></tr>
+  </table>
+  <div class="section-label"><span class="num">2</span> Examples</div>
+  <div class="examples">
+    <div class="example">
+      <div class="example-header"><span class="example-title">Minimal aspect structure</span><span class="ex-badge ex-simple">Simple</span></div>
+      <pre><code class="language-java">@Aspect       // marks this class as an aspect
+@Component    // makes it a Spring bean so it can be proxied
+public class LoggingAspect {
+
+    // Pointcut — matches any public method in any service class
+    @Pointcut("execution(public * com.studentresults.service.*.*(..))")
+    public void serviceMethods() {}  // empty — just names the pointcut
+
+    // Advice — before every service method, log the call
+    @Before("serviceMethods()")
+    public void logBefore(JoinPoint joinPoint) {
+        System.out.println("Calling: " + joinPoint.getSignature().getName());
+    }
+}</code></pre>
+    </div>
+  </div>
+</div>
+
+<!-- POINTCUT -->
+<div class="topic" id="pointcut">
+  <div class="topic-title">@Pointcut</div>
+  <div class="in-project-note">Reusable pointcut expressions — serviceMethods() for all services, auditableMethods() for @Auditable-annotated methods.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>A <code>@Pointcut</code> is a named, reusable expression that defines which join points to match. Pointcut expressions use AspectJ syntax: <code>execution()</code> matches method signatures, <code>@annotation()</code> matches annotated methods, <code>within()</code> matches classes. Combine with <code>&amp;&amp;</code>, <code>||</code>, <code>!</code>.</p>
+  <div class="section-label"><span class="num">2</span> Examples</div>
+  <div class="examples">
+    <div class="example">
+      <div class="example-header"><span class="example-title">Common pointcut expressions</span><span class="ex-badge ex-medium">Medium</span></div>
+      <pre><code class="language-java">@Aspect @Component
+public class PointcutLibrary {
+
+    // All public methods in all service classes
+    @Pointcut("execution(public * com.studentresults.service.*.*(..))")
+    public void allServiceMethods() {}
+
+    // Methods annotated with our custom @Auditable
+    @Pointcut("@annotation(com.studentresults.aspect.Auditable)")
+    public void auditableMethods() {}
+
+    // All methods in the result service specifically
+    @Pointcut("within(com.studentresults.service.ResultService)")
+    public void resultServiceMethods() {}
+
+    // Service methods that are also auditable
+    @Pointcut("allServiceMethods() &amp;&amp; auditableMethods()")
+    public void auditableServiceMethods() {}
+
+    // All controllers
+    @Pointcut("within(@org.springframework.web.bind.annotation.RestController *)")
+    public void controllerMethods() {}
+}</code></pre>
+    </div>
+  </div>
+</div>
+
+<!-- AROUND -->
+<div class="topic" id="around">
+  <div class="topic-title">@Around</div>
+  <div class="in-project-note">AuditAspect wraps all @Auditable methods — measures duration, saves to audit_log before and after, handles exceptions. Most powerful advice type.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p><code>@Around</code> completely wraps the target method. You get a <code>ProceedingJoinPoint</code> and call <code>pjp.proceed()</code> to invoke the real method. You can run code before and after, modify arguments, change the return value, or suppress exceptions. Most powerful but also most complex — use <code>@Before</code>/<code>@After</code> for simpler cases.</p>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">aspect/AuditAspect.java</div>
+    <pre><code class="language-java">@Aspect
+@Component
+public class AuditAspect {
+
+    private static final Logger log = LoggerFactory.getLogger(AuditAspect.class);
+    private final AuditLogRepository auditLogRepository;
+
+    public AuditAspect(AuditLogRepository auditLogRepository) {
+        this.auditLogRepository = auditLogRepository;
+    }
+
+    @Around("@annotation(auditable)")   // binds the annotation instance
+    public Object auditMethod(ProceedingJoinPoint pjp, Auditable auditable)
+            throws Throwable {
+
+        var methodName = pjp.getSignature().getName();
+        var args       = Arrays.toString(pjp.getArgs());
+        var start      = Instant.now();
+
+        try {
+            Object result = pjp.proceed();   // call the real method
+
+            var elapsed = Duration.between(start, Instant.now()).toMillis();
+
+            // Save audit entry
+            auditLogRepository.save(AuditLog.builder()
+                .action(auditable.action())
+                .method(methodName)
+                .arguments(args)
+                .durationMs(elapsed)
+                .outcome("SUCCESS")
+                .performedBy(SecurityContextHolder.getContext()
+                    .getAuthentication().getName())
+                .build());
+
+            return result;  // return the original result to the caller
+
+        } catch (Exception ex) {
+            auditLogRepository.save(AuditLog.builder()
+                .action(auditable.action())
+                .method(methodName)
+                .outcome("FAILURE")
+                .errorMessage(ex.getMessage())
+                .build());
+            throw ex;   // re-throw — don't swallow exceptions
+        }
+    }
+}</code></pre>
+  </div>
+</div>
+
+<!-- BEFORE -->
+<div class="topic" id="before">
+  <div class="topic-title">@Before</div>
+  <div class="in-project-note">Logs method entry with argument values before any service method executes — useful for debugging and request tracing.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p><code>@Before</code> runs before the target method. You get a <code>JoinPoint</code> (not <code>ProceedingJoinPoint</code>) — you can read method info and arguments but cannot prevent execution or modify them. Simpler than <code>@Around</code> for pure pre-execution logging.</p>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">aspect/AuditAspect.java — @Before</div>
+    <pre><code class="language-java">@Before("execution(* com.studentresults.service.*.*(..))")
+public void logMethodEntry(JoinPoint joinPoint) {
+    var signature = joinPoint.getSignature();
+    var args = joinPoint.getArgs();
+
+    log.debug("→ {}.{}({})",
+        signature.getDeclaringType().getSimpleName(),  // e.g. "StudentService"
+        signature.getName(),                            // e.g. "createStudent"
+        Arrays.stream(args)
+            .map(Object::toString)
+            .collect(Collectors.joining(", ")));
+}</code></pre>
+  </div>
+</div>
+
+<!-- AFTERRETURNING -->
+<div class="topic" id="afterreturning">
+  <div class="topic-title">@AfterReturning</div>
+  <div class="in-project-note">Logs successful mark creation with the returned MarkDTO — fires only when the method returns normally (no exception).</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p><code>@AfterReturning</code> runs after successful method completion. You can access the return value with <code>returning</code> parameter binding. Does not run if an exception is thrown — use <code>@After</code> for always-run cleanup.</p>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">aspect/AuditAspect.java — @AfterReturning</div>
+    <pre><code class="language-java">@AfterReturning(
+    pointcut = "execution(* com.studentresults.service.ResultService.createMark(..))",
+    returning = "result")   // binds the return value to 'result'
+public void logMarkCreated(JoinPoint joinPoint, Object result) {
+    if (result instanceof MarkDTO markDTO) {    // Java 16 pattern matching instanceof
+        log.info("✓ Mark created: studentId={}, subject={}, score={}",
+            markDTO.studentId(), markDTO.subjectName(), markDTO.score());
+    }
+}</code></pre>
+  </div>
+</div>
+
+<!-- AFTERTHROWING -->
+<div class="topic" id="afterthrowing">
+  <div class="topic-title">@AfterThrowing</div>
+  <div class="in-project-note">Catches any exception from any service method, logs it, and triggers an alert. Does not suppress the exception — it still propagates to the caller.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p><code>@AfterThrowing</code> runs when the target method throws an exception. You can bind the exception with <code>throwing</code>. This does <em>not</em> handle or suppress the exception — it still propagates. Use it for centralised logging or alerting without wrapping every service in try/catch.</p>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">aspect/AuditAspect.java — @AfterThrowing</div>
+    <pre><code class="language-java">@AfterThrowing(
+    pointcut = "execution(* com.studentresults.service.*.*(..))",
+    throwing = "ex")   // binds the thrown exception to 'ex'
+public void logServiceException(JoinPoint joinPoint, Exception ex) {
+    log.error("✗ Exception in {}.{}: {}",
+        joinPoint.getSignature().getDeclaringType().getSimpleName(),
+        joinPoint.getSignature().getName(),
+        ex.getMessage());
+
+    // Alert on unexpected exceptions (not business exceptions like NotFound)
+    if (!(ex instanceof BusinessException)) {
+        alertService.sendAlert("Unexpected service error: " + ex.getMessage());
+    }
+    // Exception still propagates — we're just observing, not handling
+}</code></pre>
+  </div>
+</div>
+
+<!-- AFTER -->
+<div class="topic" id="after">
+  <div class="topic-title">@After</div>
+  <div class="in-project-note">Always-runs cleanup logging — fires whether the method succeeded or threw an exception. Used for resource/connection cleanup logging.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p><code>@After</code> is the finally-equivalent in AOP — always runs regardless of outcome. Use it for guaranteed cleanup: closing resources, clearing thread-local state, or always-on metrics. Runs after <code>@AfterReturning</code> or <code>@AfterThrowing</code>.</p>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">aspect/AuditAspect.java — @After</div>
+    <pre><code class="language-java">@After("@annotation(com.studentresults.aspect.Auditable)")
+public void logMethodExit(JoinPoint joinPoint) {
+    // Runs after the method — success or failure
+    log.debug("← {}.{} completed",
+        joinPoint.getSignature().getDeclaringType().getSimpleName(),
+        joinPoint.getSignature().getName());
+}</code></pre>
+  </div>
+</div>
+
+<!-- CUSTOM ANNOTATION -->
+<div class="topic" id="custom-annotation">
+  <div class="topic-title">Custom @Auditable Annotation</div>
+  <div class="in-project-note">@Auditable marks which service methods should be audited. The AuditAspect intercepts them by matching @annotation(Auditable) — clean separation of concern.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>Define a custom annotation and use it as a pointcut with <code>@annotation()</code>. This is cleaner than execution-based pointcuts for selective auditing — you opt methods into auditing explicitly by annotating them, rather than matching by name pattern.</p>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">aspect/Auditable.java · service/StudentService.java</div>
+    <pre><code class="language-java">// 1. Define the annotation
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Auditable {
+    String action() default "";   // optional label for the audit log
+}
+
+// 2. Apply to service methods you want audited
+@Service
+public class StudentService {
+
+    @Auditable(action = "CREATE_STUDENT")
+    public StudentDTO createStudent(CreateStudentRequest request) { ... }
+
+    @Auditable(action = "DELETE_STUDENT")
+    public void softDeleteStudent(Long id) { ... }
+
+    // Not annotated — not audited
+    public StudentDTO getStudentById(Long id) { ... }
+}
+
+// 3. Aspect intercepts based on the annotation
+@Around("@annotation(auditable)")
+public Object audit(ProceedingJoinPoint pjp, Auditable auditable) throws Throwable {
+    // auditable.action() = "CREATE_STUDENT"
+}</code></pre>
+  </div>
+</div>
+
+<!-- PERFORMANCE -->
+<div class="topic" id="performance">
+  <div class="topic-title">Performance Aspect</div>
+  <div class="in-project-note">Wraps all service methods — logs a WARNING if any service call takes more than 500ms. Zero changes to service code needed.</div>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">aspect/PerformanceAspect.java</div>
+    <pre><code class="language-java">@Aspect
+@Component
+public class PerformanceAspect {
+
+    private static final Logger log = LoggerFactory.getLogger(PerformanceAspect.class);
+    private static final long SLOW_THRESHOLD_MS = 500;
+
+    @Around("execution(* com.studentresults.service.*.*(..))")
+    public Object measureTime(ProceedingJoinPoint pjp) throws Throwable {
+        var start  = Instant.now();
+        var result = pjp.proceed();
+        var elapsed = Duration.between(start, Instant.now()).toMillis();
+
+        if (elapsed > SLOW_THRESHOLD_MS) {
+            log.warn("🐢 SLOW: {}.{}() took {}ms (threshold: {}ms)",
+                pjp.getSignature().getDeclaringType().getSimpleName(),
+                pjp.getSignature().getName(),
+                elapsed, SLOW_THRESHOLD_MS);
+        } else {
+            log.debug("⚡ {}.{}() = {}ms",
+                pjp.getSignature().getDeclaringType().getSimpleName(),
+                pjp.getSignature().getName(), elapsed);
+        }
+        return result;
+    }
+}</code></pre>
+  </div>
+</div>
+
+<!-- RETRY -->
+<div class="topic" id="retry">
+  <div class="topic-title">Retry Aspect</div>
+  <div class="in-project-note">Retries service methods up to 3 times on transient DB errors (deadlocks, connection timeouts) with exponential backoff — without any retry logic inside the service itself.</div>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">aspect/RetryAspect.java</div>
+    <pre><code class="language-java">@Aspect
+@Component
+public class RetryAspect {
+
+    private static final Logger log = LoggerFactory.getLogger(RetryAspect.class);
+    private static final int MAX_RETRIES = 3;
+
+    @Around("@annotation(com.studentresults.aspect.Retryable)")
+    public Object retry(ProceedingJoinPoint pjp) throws Throwable {
+        int attempts = 0;
+        while (true) {
+            try {
+                return pjp.proceed();
+            } catch (TransientDataAccessException | CannotAcquireLockException ex) {
+                attempts++;
+                if (attempts >= MAX_RETRIES) {
+                    log.error("Failed after {} retries: {}", MAX_RETRIES, ex.getMessage());
+                    throw ex;
+                }
+                long backoff = (long) Math.pow(2, attempts) * 100; // 200ms, 400ms
+                log.warn("Transient error, retry {}/{} in {}ms: {}",
+                    attempts, MAX_RETRIES, backoff, ex.getMessage());
+                Thread.sleep(backoff);
+            }
+        }
+    }
+}
+
+// Custom annotation
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Retryable { }
+
+// Usage in service
+@Retryable
+public MarkDTO createMark(Long studentId, CreateMarkRequest request) { ... }</code></pre>
+  </div>
+</div>
+
+<div class="page-nav">
+  <a href="04-spring-data-jpa.html">← 04 · Data JPA</a>
+  <a href="06-spring-cache.html">06 · Cache →</a>
+</div>
+</main>
+</div>
+<footer>Student Portal · Java 21 + Spring Boot 3.3.12</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+<script>
+const links = document.querySelectorAll('.sidebar-link');
+const topics = document.querySelectorAll('.topic');
+const obs = new IntersectionObserver(e => {
+  e.forEach(entry => {
+    if (entry.isIntersecting) {
+      links.forEach(l => l.classList.remove('active'));
+      const a = document.querySelector(`.sidebar-link[href="#${entry.target.id}"]`);
+      if (a) { a.classList.add('active'); a.scrollIntoView({block:'nearest'}); }
+    }
+  });
+}, {rootMargin:'-49px 0px -60% 0px'});
+topics.forEach(t => obs.observe(t));
+</script>
+</body>
+</html>
