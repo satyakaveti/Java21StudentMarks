@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Spring MVC — REST API — Student Portal</title>
+<link rel="stylesheet" href="gh.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css"/>
+</head>
+<body>
+<header class="gh-header">
+  <div class="gh-logo"><svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>Student Portal</div>
+  <span class="gh-breadcrumb"><a href="../index.html">tutorials</a> / <a href="index.html">springboot</a> / <span>spring-mvc</span></span>
+</header>
+<div class="layout">
+<nav class="sidebar">
+  <div class="sidebar-nav-header"><a href="index.html">← All Modules</a></div>
+  <div class="sidebar-section">Topics</div>
+  <a class="sidebar-link" href="#restcontroller">@RestController</a>
+  <a class="sidebar-link" href="#mappings">Request Mappings</a>
+  <a class="sidebar-link" href="#params">Method Parameters</a>
+  <a class="sidebar-link" href="#responseentity">ResponseEntity</a>
+  <a class="sidebar-link" href="#exceptionhandler">Exception Handler</a>
+  <a class="sidebar-link" href="#problemdetail">ProblemDetail</a>
+  <a class="sidebar-link" href="#sse">SseEmitter</a>
+  <a class="sidebar-link" href="#pagination">Pagination</a>
+  <a class="sidebar-link" href="#httpclient">HTTP Interface Client</a>
+  <a class="sidebar-link" href="#cors">CORS</a>
+  <div class="sidebar-section">All Modules</div>
+  <div class="sidebar-modules">
+    <a class="mod-link" href="01-core-ioc-di.html">01 · Core IoC &amp; DI</a>
+    <a class="mod-link current-mod" href="02-spring-mvc.html">02 · Spring MVC</a>
+    <a class="mod-link" href="03-spring-security.html">03 · Security</a>
+    <a class="mod-link" href="04-spring-data-jpa.html">04 · Data JPA</a>
+    <a class="mod-link" href="05-spring-aop.html">05 · AOP</a>
+    <a class="mod-link" href="06-spring-cache.html">06 · Cache</a>
+    <a class="mod-link" href="07-spring-events.html">07 · Events</a>
+    <a class="mod-link" href="08-spring-scheduling.html">08 · Scheduling</a>
+    <a class="mod-link" href="09-spring-validation.html">09 · Validation</a>
+    <a class="mod-link" href="10-config-properties.html">10 · Config Properties</a>
+    <a class="mod-link" href="11-actuator-micrometer.html">11 · Actuator</a>
+    <a class="mod-link" href="12-testing.html">12 · Testing</a>
+    <a class="mod-link" href="13-virtual-threads-restclient.html">13 · Virtual Threads</a>
+  </div>
+</nav>
+<main class="main">
+<div class="ver-header">
+  <div class="ver-meta"><span class="badge badge-web">Web</span><span style="font-size:0.875rem;color:#57606a">Spring Boot 3.3.12</span></div>
+  <h1>Spring MVC — REST API</h1>
+  <p>Spring MVC maps incoming HTTP requests to Java methods. In Spring Boot 3.x, <code>@RestController</code> + <code>@RequestMapping</code> is the standard pattern. Every controller, error handler, SSE stream, and HTTP client in this project is built on Spring MVC.</p>
+</div>
+
+<!-- RESTCONTROLLER -->
+<div class="topic" id="restcontroller">
+  <div class="topic-title">@RestController</div>
+  <div class="in-project-note">All four controllers use @RestController — StudentController, ResultController, AdminController, AuthController.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p><code>@RestController</code> = <code>@Controller</code> + <code>@ResponseBody</code>. Every method return value is serialised to JSON (via Jackson) and written directly to the HTTP response body. No view resolver, no template — just JSON. Combine with <code>@RequestMapping</code> at class level to set the base path for all methods.</p>
+  <div class="section-label"><span class="num">2</span> Examples</div>
+  <div class="examples">
+    <div class="example">
+      <div class="example-header"><span class="example-title">Basic REST controller</span><span class="ex-badge ex-simple">Simple</span></div>
+      <pre><code class="language-java">@RestController
+@RequestMapping("/api/students")
+public class StudentController {
+
+    private final StudentService studentService;
+
+    public StudentController(StudentService studentService) {
+        this.studentService = studentService;
+    }
+
+    @GetMapping("/{id}")
+    public StudentDTO getStudent(@PathVariable Long id) {
+        return studentService.getStudentById(id);  // returned as JSON automatically
+    }
+}</code></pre>
+    </div>
+  </div>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">controller/AdminController.java</div>
+    <pre><code class="language-java">@RestController
+@RequestMapping("/api/admin")
+@PreAuthorize("hasRole('ADMIN')")   // entire controller requires ADMIN role
+public class AdminController {
+
+    private final StudentService studentService;
+    private final ResultService resultService;
+
+    public AdminController(StudentService studentService,
+                           ResultService resultService) {
+        this.studentService = studentService;
+        this.resultService = resultService;
+    }
+
+    @GetMapping("/students")
+    public Page&lt;StudentDTO&gt; listStudents(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return studentService.getAllStudents(PageRequest.of(page, size));
+    }
+
+    @PostMapping("/students")
+    @ResponseStatus(HttpStatus.CREATED)
+    public StudentDTO createStudent(@Valid @RequestBody CreateStudentRequest request) {
+        return studentService.createStudent(request);
+    }
+
+    @DeleteMapping("/students/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteStudent(@PathVariable Long id) {
+        studentService.softDeleteStudent(id);
+    }
+}</code></pre>
+  </div>
+</div>
+
+<!-- MAPPINGS -->
+<div class="topic" id="mappings">
+  <div class="topic-title">Request Mappings</div>
+  <div class="in-project-note">Every endpoint uses a specific HTTP method annotation — GET for reads, POST for creates, PUT for full updates, PATCH for partial updates, DELETE for removes.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>Spring provides shorthand annotations for each HTTP verb: <code>@GetMapping</code>, <code>@PostMapping</code>, <code>@PutMapping</code>, <code>@PatchMapping</code>, <code>@DeleteMapping</code>. These are composites of <code>@RequestMapping(method=...)</code>. You can narrow mappings by path, params, headers, or content type.</p>
+  <div class="section-label"><span class="num">2</span> Examples</div>
+  <div class="examples">
+    <div class="example">
+      <div class="example-header"><span class="example-title">All HTTP verbs</span><span class="ex-badge ex-simple">Simple</span></div>
+      <pre><code class="language-java">@GetMapping("/students")          // GET  /api/admin/students
+@PostMapping("/students")         // POST /api/admin/students
+@PutMapping("/students/{id}")     // PUT  /api/admin/students/1
+@PatchMapping("/students/{id}")   // PATCH /api/admin/students/1
+@DeleteMapping("/students/{id}")  // DELETE /api/admin/students/1</code></pre>
+    </div>
+    <div class="example">
+      <div class="example-header"><span class="example-title">Full CRUD controller</span><span class="ex-badge ex-medium">Medium</span></div>
+      <pre><code class="language-java">@RestController
+@RequestMapping("/api/admin/marks")
+public class MarkController {
+
+    private final ResultService resultService;
+    public MarkController(ResultService resultService) {
+        this.resultService = resultService;
+    }
+
+    // POST /api/admin/students/{studentId}/marks
+    @PostMapping("/students/{studentId}/marks")
+    @ResponseStatus(HttpStatus.CREATED)
+    public MarkDTO createMark(@PathVariable Long studentId,
+                               @Valid @RequestBody CreateMarkRequest request) {
+        return resultService.createMark(studentId, request);
+    }
+
+    // PUT /api/admin/marks/{markId}  — full update
+    @PutMapping("/{markId}")
+    public MarkDTO updateMark(@PathVariable Long markId,
+                               @Valid @RequestBody UpdateMarkRequest request) {
+        return resultService.updateMark(markId, request);
+    }
+
+    // DELETE /api/admin/marks/{markId}
+    @DeleteMapping("/{markId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteMark(@PathVariable Long markId) {
+        resultService.deleteMark(markId);
+    }
+}</code></pre>
+    </div>
+  </div>
+</div>
+
+<!-- PARAMS -->
+<div class="topic" id="params">
+  <div class="topic-title">Method Parameters</div>
+  <div class="in-project-note">@PathVariable for IDs in path, @RequestParam for filters/pagination, @RequestBody for JSON payloads, @AuthenticationPrincipal for the logged-in user.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>Spring MVC can inject many things into controller methods: path segments (<code>@PathVariable</code>), query params (<code>@RequestParam</code>), request body (<code>@RequestBody</code>), headers (<code>@RequestHeader</code>), the current authenticated user (<code>@AuthenticationPrincipal</code>), and Spring's <code>Pageable</code> for pagination — all resolved automatically.</p>
+  <div class="section-label"><span class="num">2</span> Examples</div>
+  <div class="examples">
+    <div class="example">
+      <div class="example-header"><span class="example-title">All parameter types</span><span class="ex-badge ex-simple">Simple</span></div>
+      <pre><code class="language-java">// GET /api/students/42/marks?subject=MATHS&amp;page=0&amp;size=10
+@GetMapping("/{studentId}/marks")
+public Page&lt;MarkDTO&gt; getMarks(
+        @PathVariable Long studentId,           // from URL path
+        @RequestParam(required = false) String subject,  // ?subject=MATHS
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "10") int size) {
+    return resultService.getMarks(studentId, subject, PageRequest.of(page, size));
+}
+
+// POST /api/admin/students  — JSON body mapped to record
+@PostMapping("/students")
+public ResponseEntity&lt;StudentDTO&gt; create(
+        @Valid @RequestBody CreateStudentRequest request,
+        @AuthenticationPrincipal UserDetails currentUser) {  // logged-in user
+    var dto = studentService.createStudent(request, currentUser.getUsername());
+    return ResponseEntity.status(HttpStatus.CREATED).body(dto);
+}</code></pre>
+    </div>
+    <div class="example">
+      <div class="example-header"><span class="example-title">Pageable parameter</span><span class="ex-badge ex-medium">Medium</span></div>
+      <pre><code class="language-java">// Spring auto-resolves Pageable from ?page=0&amp;size=20&amp;sort=name,asc
+@GetMapping("/students")
+public Page&lt;StudentDTO&gt; list(
+        @RequestParam(required = false) String search,
+        Pageable pageable) {  // Spring resolves from query params automatically
+    return studentService.search(search, pageable);
+}
+// GET /api/admin/students?page=1&amp;size=10&amp;sort=name,asc</code></pre>
+    </div>
+  </div>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">controller/ResultController.java</div>
+    <pre><code class="language-java">@RestController
+@RequestMapping("/api/results")
+public class ResultController {
+
+    private final ResultService resultService;
+
+    public ResultController(ResultService resultService) {
+        this.resultService = resultService;
+    }
+
+    // Student sees their own results — @AuthenticationPrincipal injects JWT principal
+    @GetMapping("/me")
+    @PreAuthorize("hasRole('STUDENT')")
+    public List&lt;MarkDTO&gt; myResults(@AuthenticationPrincipal UserDetails userDetails) {
+        return resultService.getResultsForUser(userDetails.getUsername());
+    }
+
+    @GetMapping("/me/summary")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResultSummaryDTO mySummary(@AuthenticationPrincipal UserDetails userDetails) {
+        return resultService.getSummaryForUser(userDetails.getUsername());
+    }
+}</code></pre>
+  </div>
+</div>
+
+<!-- RESPONSEENTITY -->
+<div class="topic" id="responseentity">
+  <div class="topic-title">ResponseEntity</div>
+  <div class="in-project-note">Used on create endpoints (201 Created + Location header) and anywhere fine-grained HTTP status control is needed.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p><code>ResponseEntity&lt;T&gt;</code> gives you full control over the HTTP response: status code, headers, and body. For simple cases, use <code>@ResponseStatus</code> on the method. For anything needing dynamic status codes or custom headers (like <code>Location</code> after a create), use <code>ResponseEntity</code>.</p>
+  <div class="section-label"><span class="num">2</span> Examples</div>
+  <div class="examples">
+    <div class="example">
+      <div class="example-header"><span class="example-title">201 Created with Location header</span><span class="ex-badge ex-simple">Simple</span></div>
+      <pre><code class="language-java">@PostMapping("/students")
+public ResponseEntity&lt;StudentDTO&gt; createStudent(
+        @Valid @RequestBody CreateStudentRequest request) {
+    StudentDTO created = studentService.createStudent(request);
+    URI location = URI.create("/api/admin/students/" + created.id());
+    return ResponseEntity.created(location).body(created);
+    // HTTP 201 Created
+    // Location: /api/admin/students/42
+    // Body: { "id": 42, "name": "...", ... }
+}</code></pre>
+    </div>
+    <div class="example">
+      <div class="example-header"><span class="example-title">Conditional response — 200 or 404</span><span class="ex-badge ex-medium">Medium</span></div>
+      <pre><code class="language-java">@GetMapping("/students/{id}")
+public ResponseEntity&lt;StudentDTO&gt; getStudent(@PathVariable Long id) {
+    return studentService.findById(id)
+        .map(dto -> ResponseEntity.ok(dto))          // 200 OK + body
+        .orElse(ResponseEntity.notFound().build());   // 404 No body
+}</code></pre>
+    </div>
+  </div>
+</div>
+
+<!-- EXCEPTION HANDLER -->
+<div class="topic" id="exceptionhandler">
+  <div class="topic-title">@RestControllerAdvice — Global Exception Handler</div>
+  <div class="in-project-note">GlobalExceptionHandler catches StudentNotFoundException, validation errors, and all unhandled exceptions — returns ProblemDetail for every error.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p><code>@RestControllerAdvice</code> is a global exception handler that applies to all controllers. Methods annotated with <code>@ExceptionHandler</code> catch specific exceptions thrown anywhere in the controller layer. Spring Boot 3.x pairs this with <code>ProblemDetail</code> (RFC 7807) for a standardised error response format.</p>
+  <div class="section-label"><span class="num">2</span> Examples</div>
+  <div class="examples">
+    <div class="example">
+      <div class="example-header"><span class="example-title">Catch specific exception</span><span class="ex-badge ex-simple">Simple</span></div>
+      <pre><code class="language-java">@RestControllerAdvice
+public class GlobalExceptionHandler {
+
+    @ExceptionHandler(StudentNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ProblemDetail handleNotFound(StudentNotFoundException ex) {
+        var problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+        problem.setTitle("Student Not Found");
+        return problem;
+    }
+}</code></pre>
+    </div>
+    <div class="example">
+      <div class="example-header"><span class="example-title">Full exception handler</span><span class="ex-badge ex-realtime">Real-time</span></div>
+      <pre><code class="language-java">@RestControllerAdvice
+public class GlobalExceptionHandler {
+
+    // 404 — business entity not found
+    @ExceptionHandler(StudentNotFoundException.class)
+    public ProblemDetail handleNotFound(StudentNotFoundException ex) {
+        var p = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+        p.setTitle("Student Not Found");
+        return p;
+    }
+
+    // 400 — @Valid failed on @RequestBody
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ProblemDetail handleValidation(MethodArgumentNotValidException ex) {
+        var p = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
+        p.setTitle("Validation Failed");
+        Map&lt;String, String&gt; errors = new LinkedHashMap&lt;&gt;();
+        ex.getBindingResult().getFieldErrors()
+            .forEach(e -> errors.put(e.getField(), e.getDefaultMessage()));
+        p.setProperty("errors", errors);
+        return p;
+    }
+
+    // 403 — method security @PreAuthorize failed
+    @ExceptionHandler(AccessDeniedException.class)
+    public ProblemDetail handleForbidden(AccessDeniedException ex) {
+        var p = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, "Access denied");
+        p.setTitle("Forbidden");
+        return p;
+    }
+
+    // 409 — optimistic locking conflict
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    public ProblemDetail handleConflict(ObjectOptimisticLockingFailureException ex) {
+        var p = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
+            "Record was modified by another user. Please refresh and try again.");
+        p.setTitle("Conflict");
+        return p;
+    }
+
+    // 500 — everything else
+    @ExceptionHandler(Exception.class)
+    public ProblemDetail handleAll(Exception ex) {
+        var p = ProblemDetail.forStatusAndDetail(
+            HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred");
+        p.setTitle("Internal Server Error");
+        return p;
+    }
+}</code></pre>
+    </div>
+  </div>
+</div>
+
+<!-- PROBLEMDETAIL -->
+<div class="topic" id="problemdetail">
+  <div class="topic-title">ProblemDetail (RFC 7807)</div>
+  <div class="in-project-note">All error responses in this project use ProblemDetail — standardised JSON structure with type, title, status, detail, and custom properties.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>RFC 7807 defines a standard JSON error format for APIs. Spring Boot 3.0 introduced <code>ProblemDetail</code> as a first-class return type. Instead of custom error POJOs, every error response now looks the same: <code>type</code>, <code>title</code>, <code>status</code>, <code>detail</code>, <code>instance</code>. You can add custom properties with <code>setProperty()</code>.</p>
+  <div class="section-label"><span class="num">2</span> Examples</div>
+  <div class="examples">
+    <div class="example">
+      <div class="example-header"><span class="example-title">ProblemDetail response</span><span class="ex-badge ex-simple">Simple</span></div>
+      <pre><code class="language-java">// What the client receives for a 404:
+// {
+//   "type": "about:blank",
+//   "title": "Student Not Found",
+//   "status": 404,
+//   "detail": "Student with id 99 does not exist",
+//   "instance": "/api/admin/students/99"
+// }
+
+ProblemDetail p = ProblemDetail.forStatusAndDetail(
+    HttpStatus.NOT_FOUND, "Student with id 99 does not exist");
+p.setTitle("Student Not Found");
+p.setProperty("studentId", 99);   // add any extra fields</code></pre>
+    </div>
+    <div class="example">
+      <div class="example-header"><span class="example-title">Validation error with field details</span><span class="ex-badge ex-medium">Medium</span></div>
+      <pre><code class="language-java">// 400 validation response:
+// {
+//   "title": "Validation Failed",
+//   "status": 400,
+//   "errors": {
+//     "name": "must not be blank",
+//     "score": "must be between 0 and 100"
+//   }
+// }
+var p = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
+p.setTitle("Validation Failed");
+p.setProperty("errors", Map.of(
+    "name",  "must not be blank",
+    "score", "must be between 0 and 100"
+));</code></pre>
+    </div>
+  </div>
+</div>
+
+<!-- SSE -->
+<div class="topic" id="sse">
+  <div class="topic-title">SseEmitter — Server-Sent Events</div>
+  <div class="in-project-note">Used at GET /api/results/stream — pushes "marks published" events to the student's browser in real time, which the frontend shows as a toast notification.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>Server-Sent Events (SSE) is a one-way push channel from server to client over a long-lived HTTP connection. <code>SseEmitter</code> holds the connection open; you call <code>emitter.send()</code> to push events. The browser's <code>EventSource</code> API reconnects automatically. Lighter than WebSockets for one-way notification use cases.</p>
+  <div class="section-label"><span class="num">2</span> Examples</div>
+  <div class="examples">
+    <div class="example">
+      <div class="example-header"><span class="example-title">Basic SSE endpoint</span><span class="ex-badge ex-simple">Simple</span></div>
+      <pre><code class="language-java">@GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+public SseEmitter stream() {
+    SseEmitter emitter = new SseEmitter(Long.MAX_VALUE); // keep alive forever
+    // Store emitter and send events when marks are published
+    notificationService.register(emitter);
+    emitter.onCompletion(() -> notificationService.remove(emitter));
+    emitter.onTimeout(()    -> notificationService.remove(emitter));
+    return emitter;
+}</code></pre>
+    </div>
+    <div class="example">
+      <div class="example-header"><span class="example-title">Full SSE with student-scoped emitters</span><span class="ex-badge ex-realtime">Real-time</span></div>
+      <pre><code class="language-java">@RestController
+@RequestMapping("/api/results")
+public class ResultController {
+
+    private final NotificationService notificationService;
+
+    @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @PreAuthorize("hasRole('STUDENT')")
+    public SseEmitter stream(@AuthenticationPrincipal UserDetails user) {
+        return notificationService.createEmitter(user.getUsername());
+    }
+}
+
+// In NotificationService:
+private final ConcurrentHashMap&lt;String, SseEmitter&gt; emitters = new ConcurrentHashMap&lt;&gt;();
+
+public SseEmitter createEmitter(String username) {
+    var emitter = new SseEmitter(Duration.ofMinutes(30).toMillis());
+    emitters.put(username, emitter);
+    emitter.onCompletion(() -> emitters.remove(username));
+    emitter.onTimeout(()    -> emitters.remove(username));
+    return emitter;
+}
+
+// Called when admin publishes marks
+@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+public void onMarksUpdated(MarksUpdatedEvent event) {
+    var emitter = emitters.get(event.getStudentUsername());
+    if (emitter != null) {
+        try {
+            emitter.send(SseEmitter.event()
+                .name("marks-published")
+                .data(Map.of("message", "Your results have been updated!")));
+        } catch (IOException e) {
+            emitters.remove(event.getStudentUsername());
+        }
+    }
+}</code></pre>
+    </div>
+  </div>
+</div>
+
+<!-- PAGINATION -->
+<div class="topic" id="pagination">
+  <div class="topic-title">Pagination — PageRequest &amp; Pageable</div>
+  <div class="in-project-note">Admin student list uses Pageable — GET /api/admin/students?page=0&amp;size=20&amp;sort=name,asc returns a Page with content + total count.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p><code>Pageable</code> is Spring Data's abstraction for page number, page size, and sorting. Spring MVC resolves it automatically from query parameters. Repository methods returning <code>Page&lt;T&gt;</code> run two queries: one for the data, one for the total count. The response includes <code>content</code>, <code>totalElements</code>, <code>totalPages</code>, <code>number</code>, and <code>size</code>.</p>
+  <div class="section-label"><span class="num">2</span> Examples</div>
+  <div class="examples">
+    <div class="example">
+      <div class="example-header"><span class="example-title">Pageable in controller + repository</span><span class="ex-badge ex-medium">Medium</span></div>
+      <pre><code class="language-java">// Controller — Spring resolves Pageable from ?page=0&amp;size=20&amp;sort=name,asc
+@GetMapping("/students")
+public Page&lt;StudentDTO&gt; list(Pageable pageable) {
+    return studentService.getAllStudents(pageable);
+}
+
+// Service
+public Page&lt;StudentDTO&gt; getAllStudents(Pageable pageable) {
+    return studentRepository.findAll(pageable)
+        .map(s -> new StudentDTO(s.getId(), s.getName(),
+                                  s.getRollNumber(), s.getEmail()));
+}
+
+// Response JSON:
+// {
+//   "content": [ { "id": 1, "name": "Arjun"... }, ... ],
+//   "totalElements": 150,
+//   "totalPages": 8,
+//   "number": 0,
+//   "size": 20
+// }</code></pre>
+    </div>
+  </div>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">controller/AdminController.java</div>
+    <pre><code class="language-java">@GetMapping("/students")
+public Page&lt;StudentDTO&gt; listStudents(
+        @RequestParam(required = false) String search,
+        @PageableDefault(size = 20, sort = "name") Pageable pageable) {
+    if (search != null && !search.isBlank()) {
+        return studentService.searchStudents(search, pageable);
+    }
+    return studentService.getAllStudents(pageable);
+}</code></pre>
+  </div>
+</div>
+
+<!-- HTTP INTERFACE CLIENT -->
+<div class="topic" id="httpclient">
+  <div class="topic-title">HTTP Interface Client (@HttpExchange)</div>
+  <div class="in-project-note">GradeImportClient uses @HttpExchange to call an external grade import API — declarative, like Spring Data repositories but for HTTP calls.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>Spring 6 / Boot 3.x introduced declarative HTTP clients using <code>@HttpExchange</code>. Define an interface, annotate methods with <code>@GetExchange</code>, <code>@PostExchange</code> etc., and Spring generates the implementation. Backed by <code>RestClient</code> (Boot 3.2+) or <code>WebClient</code>. Replaces boilerplate <code>RestTemplate</code> calls.</p>
+  <div class="section-label"><span class="num">2</span> Examples</div>
+  <div class="examples">
+    <div class="example">
+      <div class="example-header"><span class="example-title">Declare and use an HTTP client interface</span><span class="ex-badge ex-medium">Medium</span></div>
+      <pre><code class="language-java">// 1. Define the interface
+@HttpExchange(url = "/api/grades", accept = "application/json")
+public interface GradeImportClient {
+
+    @GetExchange("/students/{rollNumber}")
+    ExternalGradeDTO getGradeForStudent(@PathVariable String rollNumber);
+
+    @PostExchange("/bulk-import")
+    List&lt;ExternalGradeDTO&gt; importGrades(@RequestBody List&lt;String&gt; rollNumbers);
+}
+
+// 2. Register it as a bean in @Configuration
+@Bean
+public GradeImportClient gradeImportClient() {
+    var restClient = RestClient.builder()
+        .baseUrl("https://external-grades.example.com")
+        .defaultHeader("X-API-Key", appProperties.externalApiKey())
+        .build();
+    return HttpServiceProxyFactory
+        .builderFor(RestClientAdapter.create(restClient))
+        .build()
+        .createClient(GradeImportClient.class);
+}
+
+// 3. Inject and use like any other Spring bean
+@Service
+public class GradeImportService {
+    private final GradeImportClient client;
+    public GradeImportService(GradeImportClient client) { this.client = client; }
+
+    public void importForStudent(String rollNumber) {
+        var grade = client.getGradeForStudent(rollNumber);
+        // process grade...
+    }
+}</code></pre>
+    </div>
+  </div>
+</div>
+
+<!-- CORS -->
+<div class="topic" id="cors">
+  <div class="topic-title">CORS</div>
+  <div class="in-project-note">CORS is configured globally in SecurityConfig to allow the Next.js frontend (localhost:3000 in dev, production domain in prod) to call the API.</div>
+  <div class="section-label"><span class="num">1</span> High Level Overview</div>
+  <p>Browsers block cross-origin requests by default. When the Next.js frontend (port 3000) calls the Spring API (port 8080), the browser first sends a preflight <code>OPTIONS</code> request. Spring's CORS support handles this. Configure globally via <code>CorsConfigurationSource</code> in the security filter chain — this takes precedence over <code>@CrossOrigin</code> on controllers.</p>
+  <div class="section-label"><span class="num">3</span> In This Project</div>
+  <div class="project-box">
+    <div class="project-box-header">config/SecurityConfig.java — CORS configuration</div>
+    <pre><code class="language-java">@Bean
+public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    http.cors(cors -> cors.configurationSource(corsConfigurationSource()))
+        // ... rest of security config
+    return http.build();
+}
+
+@Bean
+public CorsConfigurationSource corsConfigurationSource() {
+    var config = new CorsConfiguration();
+    config.setAllowedOrigins(List.of(
+        "http://localhost:3000",           // Next.js dev
+        "https://student-portal.example.com" // production
+    ));
+    config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+    config.setAllowedHeaders(List.of("*"));
+    config.setAllowCredentials(true);   // allow cookies / Authorization header
+    config.setMaxAge(3600L);            // preflight cache 1 hour
+
+    var source = new UrlBasedCorsConfigurationSource();
+    source.registerCorsConfiguration("/api/**", config);
+    return source;
+}</code></pre>
+  </div>
+</div>
+
+<div class="page-nav">
+  <a href="01-core-ioc-di.html">← 01 · Core IoC &amp; DI</a>
+  <a href="03-spring-security.html">03 · Security →</a>
+</div>
+</main>
+</div>
+<footer>Student Portal · Java 21 + Spring Boot 3.3.12</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+<script>
+const links = document.querySelectorAll('.sidebar-link');
+const topics = document.querySelectorAll('.topic');
+const obs = new IntersectionObserver(e => {
+  e.forEach(entry => {
+    if (entry.isIntersecting) {
+      links.forEach(l => l.classList.remove('active'));
+      const a = document.querySelector(`.sidebar-link[href="#${entry.target.id}"]`);
+      if (a) { a.classList.add('active'); a.scrollIntoView({block:'nearest'}); }
+    }
+  });
+}, {rootMargin:'-49px 0px -60% 0px'});
+topics.forEach(t => obs.observe(t));
+</script>
+</body>
+</html>
